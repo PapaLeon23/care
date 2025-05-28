@@ -179,12 +179,18 @@
                                                 {% set type_class_name = schedule_detail.work_type | lower %}
                                                 {% if schedule_detail.is_overtime %}{% set type_class_name = "하원plus연장" %}{% endif %}
                                                 
-                                                <div class="schedule-item-box type-{{ type_class_name }}" title="{{ schedule_detail.nickname }}: {{ work_type_text_display }} ({{schedule_detail.status}})">
-                                                    <span class="schedule-type-text">{{ schedule_detail.nickname }}: {{ work_type_text_display }}</span>
+                                                <div class="schedule-item-box type-{{ type_class_name }}" title="{{ schedule_detail.nickname }}: {{ schedule_detail.work_type }}{% if schedule_detail.is_overtime and schedule_detail.work_type == '하원'%}+연장{%endif%} ({{schedule_detail.status}})">
+                                                    <span class="schedule-type-text">
+                                                        {{ schedule_detail.nickname }}:<br>
+                                                        {# "공휴일"일 경우 work_type_text_display는 "공휴일"이 됩니다. #}
+                                                        {{ work_type_text_display if schedule_detail.work_type != '공휴일' else '공휴일' }} 
+                                                    </span>
                                                     {% if schedule_detail.status == '계획됨' %}
                                                         <small class="schedule-status status-planned">(계획)</small>
                                                     {% elif schedule_detail.status == '근무 완료' %}
                                                         <small class="schedule-status status-completed">(완료)</small>
+                                                    {% elif schedule_detail.status == '공휴일' %} {# '공휴일' 상태 표시 (선택 사항) #}
+                                                         <small class="schedule-status status-holiday">(휴일)</small>
                                                     {% endif %}
                                                 </div>
                                                 {% endfor %}
@@ -255,6 +261,7 @@
                             <option value="미지정">-- 선택 --</option>
                             <option value="등원">{{ MORNING_SHIFT_DESC }}</option>
                             <option value="하원">{{ AFTERNOON_SHIFT_DESC }}</option>
+                            <option value="공휴일"> 휴일 </option> {# "공휴일" 옵션 추가 #}
                         </select>
                     </div>
                     <div class="form-group" id="overtime_group_bulk" style="display:none;">
@@ -282,6 +289,7 @@
                 <select id="edit_work_type" name="work_type" onchange="toggleEditOvertime()">
                     <option value="등원">{{ MORNING_SHIFT_DESC }}</option>
                     <option value="하원">{{ AFTERNOON_SHIFT_DESC }}</option>
+                    <option value="공휴일">근무 없음</option> {# "공휴일" 옵션 추가 #}
                 </select>
             </div>
             <div class="form-group" id="edit_overtime_group" style="display:none;">
@@ -293,6 +301,7 @@
                 <select id="edit_schedule_status" name="status">
                     <option value="계획됨">계획됨</option>
                     <option value="근무 완료">근무 완료</option>
+                    <option value="공휴일">공휴일</option>
                 </select>
             </div>
             <div class="modal-form-actions">

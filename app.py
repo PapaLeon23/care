@@ -394,15 +394,23 @@ def admin_bulk_manage_schedule():
 
         updated_count = 0
         for target_date in target_dates_list:
-            # 기존 스케줄 덮어쓰기 (또는 중복 방지 로직 추가 가능)
             WorkSchedule.query.filter_by(work_date=target_date, user_id=form_user_id).delete()
-            if form_work_type != "미지정":
+            if form_work_type != "미지정": # "미지정"은 스케줄 삭제를 의미
+                is_o = False # 기본값
+                status_val = '계획됨' # 기본 상태
+
+                if form_work_type == '휴일':
+                    is_o = False # 공휴일은 연장근무 없음
+                    # status_val = '공휴일' # 상태를 '공휴일'로 하고 싶다면
+                elif form_work_type == '하원':
+                    is_o = form_is_overtime
+                
                 new_schedule = WorkSchedule(
                     user_id=form_user_id, 
                     work_date=target_date, 
                     work_type=form_work_type,
-                    is_overtime=form_is_overtime if form_work_type == '하원' else False,
-                    status='계획됨' # 명시적으로 상태 설정
+                    is_overtime=is_o,
+                    status=status_val 
                 )
                 db.session.add(new_schedule)
                 updated_count += 1
@@ -412,7 +420,7 @@ def admin_bulk_manage_schedule():
         db.session.rollback(); flash(f"입력값 오류: {ve}", 'danger')
     except Exception as e:
         db.session.rollback(); flash(f"스케줄 일괄 업데이트 중 오류 발생: {e}", 'danger')
-    return redirect(url_for('admin_dashboard', year=current_year, month=current_month))
+    return redirect(url_for('admin_dashboard', year=current_year, month=current_month, selected_date_for_details=target_dates_list[0].strftime('%Y-%m-%d') if target_dates_list else None ))
 
 # 관리자: 개별 스케줄 수정 (근무 유형, 연장, 상태 변경 가능)
 @app.route('/admin/schedule/<int:schedule_id>/edit', methods=['POST'])
@@ -426,23 +434,40 @@ def admin_edit_schedule(schedule_id):
         
         new_work_type = data.get('work_type')
         new_is_overtime = data.get('is_overtime', False)
-        new_status = data.get('status', schedule.status) # 상태 변경 추가
+        new_status = data.get('status', schedule.status)
 
-        if new_work_type not in ['등원', '하원']:
+        # "공휴일" 유형 추가
+        if new_work_type not in ['등원', '하원', '휴일']: 
              return jsonify({'success': False, 'message': '유효하지 않은 근무 유형입니다.'}), 400
-        if new_status not in ['계획됨', '근무 완료']:
+        if new_status not in ['계획됨', '근무 완료', '휴일']: # '공휴일' 상태도 허용 (선택 사항)
              return jsonify({'success': False, 'message': '유효하지 않은 근무 상태입니다.'}), 400
 
         schedule.work_type = new_work_type
-        schedule.is_overtime = bool(new_is_overtime) if new_work_type == '하원' else False
-        schedule.status = new_status
+        if new_work_type == '휴일':
+            schedule.is_overtime = False # 공휴일은 연장근무 없음
+            # schedule.status = '공휴일' # 상태를 '공휴일'로 자동 변경하고 싶다면
+        elif new_work_type == '하원':
+            schedule.is_overtime = bool(new_is_overtime)
+        else: # 등원
+            schedule.is_overtime = False
         
+        if new_work_type != '휴일' or schedule.status != '휴일': # 공휴일 유형이면서 상태도 공휴일이면 상태는 그대로 유지
+             schedule.status = new_status
+
+
         db.session.commit()
         user = User.query.get(schedule.user_id)
         display_name = user.get_display_name() if user else "Unknown"
-        status_info = f" ({schedule.status})" if schedule.status == '계획됨' else ""
-        display_text_for_schedule = f"{display_name}: {schedule.work_type}{'+연장' if schedule.is_overtime and schedule.work_type == '하원' else ''}{status_info}"
         
+        # 표시 텍스트에 "공휴일" 반영
+        work_type_display_for_json = schedule.work_type
+        if schedule.work_type == '하원' and schedule.is_overtime:
+            work_type_display_for_json += "+연장"
+        
+        display_text_for_schedule = f"{display_name}: {work_type_display_for_json}"
+        if schedule.status != '근무 완료': # 근무 완료가 아닌 경우에만 상태 표시 (공휴일 포함)
+             display_text_for_schedule += f" ({schedule.status})"
+
         return jsonify({
             'success': True, 'message': '스케줄이 수정되었습니다.',
             'schedule': {
@@ -450,7 +475,7 @@ def admin_edit_schedule(schedule_id):
                 'username': user.username if user else "Unknown", 'nickname': display_name,
                 'work_type': schedule.work_type, 'is_overtime': schedule.is_overtime,
                 'status': schedule.status, 'date_str': schedule.work_date.strftime('%Y-%m-%d'),
-                'display_text': display_text_for_schedule
+                'display_text': display_text_for_schedule # JS에서 사용할 때 이 값을 참조
             }
         })
     except Exception as e:
