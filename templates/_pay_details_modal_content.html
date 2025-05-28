@@ -1,15 +1,15 @@
 {# templates/_pay_details_modal_content.html #}
-<h1 class="header-title" style="font-size: 1.4em; margin-bottom: 15px;">{{ year }}년 {{ month }}월 급여 산정 상세 내역</h1>
+<h1 class="header-title" style="font-size: 1.4em; margin-bottom: 15px; text-align: center;">{{ year }}년 {{ month }}월 급여 산정 상세 내역</h1>
 <p style="text-align: center; font-size: 0.9em; margin-top: -10px; margin-bottom: 15px;">(정산 기간: 전월 25일 ~ 당월 24일)</p>
 
 {% if work_details and work_details|length > 0 %}
     <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
         <thead>
             <tr>
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f0f8ff;">날짜 (요일)</th>
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f0f8ff;">근무 형태 및 시간</th>
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: right; background-color: #f0f8ff;">산정 시간</th>
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: right; background-color: #f0f8ff;">산정 급여</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #f0f8ff;">날짜(요일)</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #f0f8ff;">근무 정보</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #f0f8ff;">근무시간</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #f0f8ff;">급여</th>
             </tr>
         </thead>
         <tbody>
