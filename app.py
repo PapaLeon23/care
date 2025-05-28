@@ -101,7 +101,7 @@ def get_monthly_work_summary(user_id, year, month):
         total_pay += daily_pay
         total_hours += daily_hours
         work_details_for_pay.append({
-            'date': schedule.work_date.strftime(f'%Y-%m-%d ({actual_weekday_str})'),
+            'date': schedule.work_date.strftime(f'%m-%d') + f'({actual_weekday_str})', # 예: "05-28(수)"
             'shift': shift_desc_detail,
             'hours_val': daily_hours,
             'pay_val': daily_pay,
@@ -577,7 +577,6 @@ def admin_delete_user(target_user_id):
 def pay_details_content():
     if 'user_id' not in session:
         return jsonify({'error': '로그인이 필요합니다.'}), 401
-
     user_id = session['user_id']
     year = request.args.get('year', type=int)
     month = request.args.get('month', type=int)

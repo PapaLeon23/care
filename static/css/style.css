@@ -630,11 +630,11 @@ footer {
     #daily_schedule_details_container { max-height: 180px; }
     
     .calendar-navigation a {
-        font-size: 0.7em; /* 기존 1.2em 또는 1.25em 에서 축소 */
+        font-size: 0.6em; /* 기존 1.2em 또는 1.25em 에서 축소 */
         padding: 5px 8px;
     }
     .calendar-navigation span {
-        font-size: 0.9em;   /* 기존 1.3em 또는 1.4em 에서 축소 */
+        font-size: 0.6em;   /* 기존 1.3em 또는 1.4em 에서 축소 */
         margin: 0 10px;
     }
 
@@ -698,11 +698,11 @@ footer {
     }
 
     .calendar-navigation a {
-        font-size: 0.8em;
+        font-size: 0.5em;
         padding: 4px 6px;
     }
     .calendar-navigation span {
-        font-size: 0.9em;
+        font-size: 0.5em;
         margin: 0 8px;
     }
 
