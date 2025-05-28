@@ -1,0 +1,75 @@
+{% extends "layout.html" %}
+{% block title %}사용자 정보 수정{% endblock %}
+
+{% block head_extra %}
+<style>
+    .edit-user-container {
+        max-width: 600px;
+        margin: 40px auto;
+        background-color: #fff;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        border-top: 5px solid #007BFF;
+    }
+    .edit-user-container h2 {
+        color: #0056b3;
+        margin-top: 0;
+        margin-bottom: 25px;
+        text-align: center;
+    }
+    .form-section {
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px dashed #eee;
+    }
+    .form-section:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+    .form-section h3 {
+        font-size: 1.2em;
+        color: #333;
+        margin-bottom: 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="edit-user-container">
+    <h2>사용자 정보 수정: {{ user_to_edit.username }}</h2>
+
+    <form method="POST" action="{{ url_for('admin_edit_user', user_id=user_to_edit.id) }}">
+        <div class="form-section">
+            <h3>비밀번호 변경</h3>
+            <p style="font-size:0.9em; color:#666;">비밀번호를 변경하려면 새 비밀번호를 입력하세요. 변경하지 않으려면 비워두세요.</p>
+            <div class="form-group">
+                <label for="new_password">새 비밀번호</label>
+                <input type="password" id="new_password" name="new_password" class="form-control" placeholder="새 비밀번호 (8자 이상 권장)">
+            </div>
+            <div class="form-group">
+                <label for="confirm_password">새 비밀번호 확인</label>
+                <input type="password" id="confirm_password" name="confirm_password" class="form-control" placeholder="새 비밀번호 다시 입력">
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>권한 설정</h3>
+            <div class="form-group">
+                <input type="checkbox" id="is_admin" name="is_admin" value="true" {% if user_to_edit.is_admin %}checked{% endif %}
+                       {% if user_to_edit.id == session.user_id and User.query.filter_by(is_admin=True).count() <= 1 %}disabled title="마지막 관리자의 권한은 해제할 수 없습니다."{% endif %}>
+                <label for="is_admin" style="font-weight:normal; display:inline;">이 사용자를 관리자로 지정</label>
+                 {% if user_to_edit.id == session.user_id and User.query.filter_by(is_admin=True).count() <= 1 %}
+                    <p style="font-size:0.8em; color:orange;">(마지막 관리자이므로 권한 변경 불가)</p>
+                 {% endif %}
+            </div>
+        </div>
+
+        <div style="margin-top: 30px; display: flex; justify-content: space-between;">
+            <button type="submit" class="button-primary" style="width: auto; padding: 10px 25px;">정보 저장</button>
+            <a href="{{ url_for('admin_users_list') }}" class="button-secondary" style="text-decoration: none; background-color: #6c757d; color:white; padding: 10px 25px; border-radius: 5px;">취소</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

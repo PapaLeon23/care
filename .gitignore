@@ -1,0 +1,19 @@
+# Python
+*.py[cod]
+__pycache__/
+*.env
+.env
+venv/
+env/
+ENV/
+*.egg-info/
+*.log
+
+# SQLite Database
+schedule.db
+instance/schedule.db 
+# (만약 instance 폴더 안에 schedule.db가 생성된다면 위 경로도 추가)
+
+# OS specific
+.DS_Store
+Thumbs.db

@@ -1,0 +1,514 @@
+{% extends "layout.html" %}
+{% block title %}관리자 스케줄 관리{% endblock %}
+
+{% block head_extra %}
+<style>
+    /* admin_dashboard.html 페이지 전용 스타일 */
+    .admin-dashboard-container {
+        display: flex; /* 왼쪽과 오른쪽 영역을 가로로 배치 */
+        gap: 15px; /* 좌우 영역 사이의 간격 */
+        flex-wrap: wrap; /* 너비가 부족할 경우 오른쪽 영역이 아래로 이동 */
+        align-items: stretch; /* 자식 요소들의 높이를 동일하게 만듦 (중요) */
+    }
+
+    .admin-main-calendar-area { /* 왼쪽: 달력 + 상세 스케줄 */
+        flex: 3 1 550px; /* 비율 3, 최소 너비 550px */
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .admin-right-panel { /* 오른쪽: 요약 + 일괄 폼 */
+        flex: 1 1 320px; /* 비율 1, 최소 너비 320px */
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    /* 오른쪽 패널의 '전체 요약' 박스 스타일 */
+    .admin-right-panel .admin-summary-pane.content-box {
+        box-sizing: border-box; /* padding과 border를 너비 계산에 포함시켜, 다른 박스와의 시각적 너비 일관성 확보 */
+        flex-grow: 0;           /* 세로 방향으로 늘어나지 않음 (내용만큼의 높이) */
+        flex-shrink: 0;         /* 세로 방향으로 줄어들지 않음 */
+        /* width: 100%; */     /* 부모 너비만큼 채우도록 명시 (선택 사항, align-items: stretch 기본값으로 보통 자동) */
+    }
+
+    /* 오른쪽 패널의 '일괄 스케줄 지정' 박스 스타일 */
+    .admin-right-panel .schedule-form-wrapper.content-box {
+        box-sizing: border-box; /* padding과 border를 너비 계산에 포함 */
+        flex-grow: 1;           /* 남은 세로 공간을 모두 채우도록 함 */
+        display: flex;          /* 내부 .schedule-form-pane이 공간을 채울 수 있도록 flex 컨테이너로 설정 */
+        flex-direction: column; /* 내부 요소 수직 정렬 */
+        min-height: 0;          /* flex 아이템 내용이 넘칠 때 스크롤이 제대로 동작하도록 설정 (중요) */
+        /* width: 100%; */     /* 부모 너비만큼 채우도록 명시 (선택 사항) */
+    }
+
+    .admin-right-panel .schedule-form-wrapper .schedule-form-pane {
+        flex-grow: 1; /* .schedule-form-pane이 wrapper의 남은 공간을 채우도록 */
+        overflow-y: auto; /* 내용이 많을 경우 내부 스크롤 생성 */
+    }
+    
+    .admin-calendar td.selected-for-details {
+        outline: 3px solid var(--info-color) !important;
+        outline-offset: -3px;
+        background-color: #e6f7ff !important;
+    }
+    
+    .admin-calendar td.selected-for-bulk {
+        background-color: #34a1eb;
+        /* border: 1px dashed #ffc107; */
+    }
+
+    #daily_schedule_details_container {
+        margin-top: 0; 
+        padding: 15px; 
+        background-color: #fdfdfd; 
+        border: 1px solid var(--border-color); 
+        border-radius: var(--border-radius-base);
+        min-height: 120px; 
+        max-height: 280px; 
+        overflow-y: auto;
+    }
+    #daily_schedule_details_container h4 {
+        margin-top: 0; 
+        color: var(--primary-color-dark);
+        border-bottom: 1px solid var(--light-blue-accent); 
+        padding-bottom: 8px; 
+        font-size: 1.2em;
+    }
+    .daily-schedule-list { 
+        list-style-type: none; 
+        padding-left: 0; 
+        margin-bottom: 0;
+    }
+    .daily-schedule-list li {
+        padding: 10px 5px; 
+        border-bottom: 1px dotted #eee; 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        font-size: 0.9em;
+        line-height: 1.4;
+    }
+    .daily-schedule-list li:last-child { 
+        border-bottom: none;
+    }
+    .schedule-text { 
+        flex-grow: 1;       
+        margin-right: 10px; 
+        text-align: left;   
+    }
+    .schedule-actions button {
+        margin-left: 5px; 
+    }
+
+    /* 모바일 대응 */
+    @media (max-width: 890px) { 
+        .admin-dashboard-container {
+            flex-direction: column; 
+        }
+        .admin-main-calendar-area, .admin-right-panel {
+            flex-basis: auto; 
+            min-width: 0;
+            width: 100%; 
+        }
+        .admin-right-panel .schedule-form-wrapper.content-box {
+            flex-grow: 0; 
+        }
+        .admin-right-panel .schedule-form-wrapper .schedule-form-pane {
+            flex-grow: 0;
+            overflow-y: visible; 
+        }
+    }
+    @media (max-width: 768px) {
+        #daily_schedule_details_container { max-height: 180px; }
+    }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div class="admin-dashboard-container"> {# 전체 페이지를 감싸는 flex 컨테이너 (가로 방향) #}
+    
+    <div class="admin-main-calendar-area">
+        <div class="admin-calendar-pane content-box"> {# 달력 박스 #}
+            <h2 class="page-main-title">{{ month_title_display }} 스케줄 관리</h2>
+            <div class="calendar-navigation"> {# style.css 공통 스타일 적용 #}
+                <a href="{{ url_for('admin_dashboard', year=current_year_for_nav if current_month_for_nav > 1 else current_year_for_nav-1, month=current_month_for_nav-1 if current_month_for_nav > 1 else 12, selected_date_for_details=request.args.get('selected_date_for_details')) }}">&lt; 이전 달</a>
+                <span>{{ month_title_display }}</span>
+                <a href="{{ url_for('admin_dashboard', year=current_year_for_nav if current_month_for_nav < 12 else current_year_for_nav+1, month=current_month_for_nav+1 if current_month_for_nav < 12 else 1, selected_date_for_details=request.args.get('selected_date_for_details')) }}">다음 달 &gt;</a>
+            </div>
+            <div class="admin-calendar">
+                <table class="table-common"> {# style.css 공통 테이블 스타일 #}
+                    <thead>
+                        <tr>
+                            {% for header in weekday_headers %} {# 일-토 순서 #}
+                                {% if header == "일" %}
+                                    <th class="weekend-header-sun">{{ header }}</th>
+                                {% elif header == "토" %}
+                                    <th class="weekend-header-sat">{{ header }}</th>
+                                {% else %}
+                                    <th>{{ header }}</th> {# style.css .table-common th 기본 #}
+                                {% endif %}
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for week in calendar_weeks %}
+                        <tr>
+                            {% for day_data in week %}
+                                {% if day_data.day == 0 %}
+                                    <td class="empty-day"></td>
+                                {% else %}
+                                    <td class="clickable-day day-cell
+                                        {% if day_data.is_weekend %}weekend-day-cell{% endif %}
+                                        {# selected-for-bulk, selected-for-details 클래스는 JS에서 동적 관리 #}
+                                        "
+                                        data-date="{{ day_data.date_str }}"
+                                        data-schedules="{{ day_data.schedules_details | tojson | urlencode }}"
+                                        onclick="handleAdminDateClick(this)">
+                                        <div class="day-number-container">
+                                            <span class="day-number">{{ day_data.day }}</span>
+                                            {# <small style="color:purple;">(PYW:{{ day_data.py_weekday }})</small> #}
+                                            {% if day_data.schedules_details %}
+                                                {% for schedule_detail in day_data.schedules_details %}
+                                                {# 스케줄 유형별 CSS 클래스 및 상태 표시 #}
+                                                {% set work_type_text_display = schedule_detail.work_type %}
+                                                {% if schedule_detail.is_overtime %}{% set work_type_text_display = "연장" %}{% endif %}
+
+                                                {% set type_class_name = schedule_detail.work_type | lower %}
+                                                {% if schedule_detail.is_overtime %}{% set type_class_name = "하원plus연장" %}{% endif %}
+                                                
+                                                <div class="schedule-item-box type-{{ type_class_name }}" title="{{ schedule_detail.nickname }}: {{ work_type_text_display }} ({{schedule_detail.status}})">
+                                                    <span class="schedule-type-text">{{ schedule_detail.nickname }}: {{ work_type_text_display }}</span>
+                                                    {% if schedule_detail.status == '계획됨' %}
+                                                        <small class="schedule-status status-planned">(계획)</small>
+                                                    {% elif schedule_detail.status == '근무 완료' %}
+                                                        <small class="schedule-status status-completed">(완료)</small>
+                                                    {% endif %}
+                                                </div>
+                                                {% endfor %}
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                {% endif %}
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {# 상세 스케줄 표시 영역 (달력 박스 내부 하단) #}
+            <div id="daily_schedule_details_container" style="display: none;">
+                <h4 id="selected_date_header_for_details"></h4>
+                <ul id="daily_schedule_list_for_details" class="daily-schedule-list"></ul>
+                <p id="no_schedules_message_for_details" style="display:none; color:#777;">해당 날짜에 등록된 스케줄이 없습니다.</p>
+            </div>
+            {# "지난 계획 근무 완료처리" 버튼 (달력 박스 내부 하단) #}
+            <form method="POST" action="{{ url_for('admin_complete_past_planned_schedules') }}" style="margin-top: 20px; text-align: right;">
+                <button type="submit" class="button-secondary" style="width:auto;" 
+                        onclick="return confirm('오늘 이전의 모든 \'계획됨\' 상태의 근무를 \'근무 완료\'로 변경하시겠습니까? 이 작업은 되돌릴 수 없습니다.');">지난 계획 근무 완료처리</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="admin-right-panel">
+        <div class="admin-summary-pane content-box">
+            <h3 class="summary-title">{{ month_title_display }} 전체 요약(근무 완료 기준)</h3>
+            <div class="info-card">
+                <div class="summary-item"> {# << 공통 클래스 .summary-item 적용 #}
+                    <span class="value">{{ overall_total_pay_str }}원</span>
+                    <span class="label">전체 누적 급여</span>
+                </div>
+                <div class="summary-item"> {# << 공통 클래스 .summary-item 적용 #}
+                    <span class="value">{{ overall_total_hours_str }}시간</span>
+                    <span class="label">전체 누적 근무시간</span>
+                </div>
+                <p style="font-size:1em; color:#777; margin-top:50px;">- 선생님의 해당 월 완료된 근무 합산</p>
+                <p style="font-size:1em; color:#777; margin-bottom:5px;">- 전월 25일부터 당월 24일 기준</p>
+            </div>
+        </div>
+
+        <div class="schedule-form-wrapper content-box"> {# 일괄 스케줄 지정 폼을 감싸는 박스 #}
+            <div class="schedule-form-pane"> {# 실제 폼이 있는 내부 pane (스타일은 거의 없음) #}
+                <h3 class="page-main-title">근무 스케줄 지정</h3>
+                <div id="selected_dates_display_container">
+                    <p>선택된 날짜: <span id="selected_dates_text">없음</span></p>
+                    <small style="color: #555;">(달력에서 날짜를 클릭하여 다중 선택/해제)</small>
+                </div>
+                <form id="bulkScheduleForm" method="POST" action="{{ url_for('admin_bulk_manage_schedule') }}">
+                    <input type="hidden" name="current_year" value="{{ current_year_for_nav }}">
+                    <input type="hidden" name="current_month" value="{{ current_month_for_nav }}">
+                    <input type="hidden" name="dates_to_process" id="dates_for_form_submission">
+                    <div class="form-group">
+                        <label for="user_id_bulk">돌봄 선생님:</label>
+                        <select id="user_id_bulk" name="user_id" required>
+                            <option value="">-- 선생님 선택 --</option>
+                            {% for caregiver in caregivers %}
+                            <option value="{{ caregiver.id }}">{{ caregiver.nickname }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="work_type_bulk">근무 유형:</label>
+                        <select id="work_type_bulk" name="work_type" onchange="toggleOvertimeBulk()">
+                            <option value="미지정">-- 선택 --</option>
+                            <option value="등원">{{ MORNING_SHIFT_DESC }}</option>
+                            <option value="하원">{{ AFTERNOON_SHIFT_DESC }}</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="overtime_group_bulk" style="display:none;">
+                        <input type="checkbox" id="is_overtime_bulk" name="is_overtime">
+                        <label for="is_overtime_bulk" class="inline-label">연장 근무 ({{ OVERTIME_SHIFT_DESC_BASE.split('(')[-1][:-1] }})</label>
+                    </div>
+                    <button type="submit" class="button-primary" style="width: auto; padding: 10px 20px;">선택한 날짜에 일괄 적용</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="editScheduleModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button" onclick="closeEditModal()">&times;</span>
+        <div class="modal-header">
+            <h4>스케줄 수정 (<span id="edit_modal_date_display"></span>)</h4>
+        </div>
+        <form id="editScheduleForm">
+            <input type="hidden" id="edit_schedule_id" name="schedule_id">
+            <p style="margin-bottom:15px;"><strong>선생님:</strong> <span id="edit_username_display"></span></p>
+            <div class="form-group">
+                <label for="edit_work_type">근무 유형:</label>
+                <select id="edit_work_type" name="work_type" onchange="toggleEditOvertime()">
+                    <option value="등원">{{ MORNING_SHIFT_DESC }}</option>
+                    <option value="하원">{{ AFTERNOON_SHIFT_DESC }}</option>
+                </select>
+            </div>
+            <div class="form-group" id="edit_overtime_group" style="display:none;">
+                <input type="checkbox" id="edit_is_overtime" name="is_overtime">
+                <label for="edit_is_overtime" class="inline-label">연장 근무</label>
+            </div>
+            <div class="form-group">
+                <label for="edit_schedule_status">근무 상태:</label>
+                <select id="edit_schedule_status" name="status">
+                    <option value="계획됨">계획됨</option>
+                    <option value="근무 완료">근무 완료</option>
+                </select>
+            </div>
+            <div class="modal-form-actions">
+                <button type="button" class="button-secondary" onclick="closeEditModal()">취소</button>
+                <button type="submit" class="button-primary">수정 저장</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 이전 답변에서 제공한 JavaScript 전체 코드를 여기에 붙여넣습니다.
+    // (selectedDatesForBulk, lastClickedDateForDetails, updateSelectedDatesForBulkDisplay,
+    //  handleAdminDateClick, showDailySchedules, openEditModal, closeEditModal,
+    //  toggleEditOvertime, editForm 이벤트 리스너, deleteSchedule, refreshPageForDateDetails,
+    //  toggleOvertimeBulk, flashMessage, createFlashContainer, DOMContentLoaded 리스너 등)
+    // JavaScript 코드의 showDailySchedules 함수 내에서 스케줄 상태 표시 부분을
+    // 이전 답변과 같이 <small> 태그와 CSS 클래스를 사용하도록 합니다.
+    let selectedDatesForBulk = new Set();
+    let lastClickedDateForDetails = null; 
+
+    function updateSelectedDatesForBulkDisplay() {
+        const displaySpan = document.getElementById('selected_dates_text');
+        const datesInputForSubmission = document.getElementById('dates_for_form_submission');
+        if (selectedDatesForBulk.size > 0) {
+            const datesArray = Array.from(selectedDatesForBulk).sort();
+            displaySpan.textContent = `${datesArray.length}개 선택됨: ${datesArray.slice(0,3).join(', ')}${datesArray.length > 3 ? '...' : ''}`;
+            datesInputForSubmission.value = datesArray.join(',');
+        } else {
+            displaySpan.textContent = '없음';
+            datesInputForSubmission.value = '';
+        }
+    }
+
+    function handleAdminDateClick(dayCellElement) {
+        const dateStr = dayCellElement.dataset.date;
+        let schedulesDetails = [];
+        if(dayCellElement.dataset.schedules) {
+            try { schedulesDetails = JSON.parse(decodeURIComponent(dayCellElement.dataset.schedules)); }
+            catch (e) { console.error("Error parsing schedules JSON for date " + dateStr + ":", e); }
+        }
+        if (!dateStr) return;
+
+        // 일반 클릭으로 다중 선택/해제 (selected-for-bulk 클래스 토글)
+        if (selectedDatesForBulk.has(dateStr)) {
+            selectedDatesForBulk.delete(dateStr);
+            dayCellElement.classList.remove('selected-for-bulk');
+        } else {
+            selectedDatesForBulk.add(dateStr);
+            dayCellElement.classList.add('selected-for-bulk');
+        }
+        updateSelectedDatesForBulkDisplay();
+
+        // 상세 스케줄 표시: 항상 마지막으로 클릭(선택 또는 해제된) 날짜 기준으로.
+        document.querySelectorAll('.admin-calendar td.selected-for-details').forEach(cell => {
+            cell.classList.remove('selected-for-details');
+        });
+        dayCellElement.classList.add('selected-for-details');
+        lastClickedDateForDetails = dateStr; 
+        showDailySchedules(dateStr, schedulesDetails); 
+    }
+    
+    function showDailySchedules(dateStr, schedulesDetails) {
+        const container = document.getElementById('daily_schedule_details_container');
+        const header = document.getElementById('selected_date_header_for_details');
+        const listUl = document.getElementById('daily_schedule_list_for_details');
+        const noSchedulesMsg = document.getElementById('no_schedules_message_for_details');
+        
+        header.textContent = `${dateStr} 스케줄`;
+        listUl.innerHTML = '';
+
+        if (schedulesDetails && schedulesDetails.length > 0) {
+            noSchedulesMsg.style.display = 'none';
+            schedulesDetails.forEach(schedule => {
+                const li = document.createElement('li');
+                li.setAttribute('data-schedule-id', schedule.id);
+
+                let scheduleWorkTypeDisplay = schedule.work_type;
+                if (schedule.is_overtime) { 
+                    scheduleWorkTypeDisplay += "+연장";
+                }
+                let scheduleCoreText = `${schedule.nickname}: ${scheduleWorkTypeDisplay}`;
+
+                let statusHtml = '';
+                if (schedule.status === '계획됨') {
+                    statusHtml = '<small class="schedule-status status-planned">(계획)</small>';
+                } else if (schedule.status === '근무 완료') {
+                    statusHtml = '<small class="schedule-status status-completed">(완료)</small>';
+                }
+                
+                li.innerHTML = `
+                    <span class="schedule-text">
+                        ${scheduleCoreText}
+                        ${statusHtml} 
+                    </span>
+                    <div class="schedule-actions">
+                        <button class="btn-edit-sch" onclick="openEditModal(${schedule.id}, '${schedule.nickname}', '${schedule.work_type}', ${schedule.is_overtime}, '${schedule.date_str}', '${schedule.status}')">수정</button>
+                        <button class="btn-delete-sch" onclick="deleteSchedule(${schedule.id}, '${schedule.date_str}')">삭제</button>
+                    </div>
+                `;
+                listUl.appendChild(li);
+            });
+        } else {
+            noSchedulesMsg.style.display = 'block';
+        }
+        container.style.display = 'block';
+    }
+    
+    const modal = document.getElementById('editScheduleModal');
+    const editForm = document.getElementById('editScheduleForm');
+
+    function openEditModal(scheduleId, userNickname, workType, isOvertime, scheduleDate, scheduleStatus) {
+        document.getElementById('edit_schedule_id').value = scheduleId;
+        document.getElementById('edit_username_display').textContent = userNickname;
+        document.getElementById('edit_work_type').value = workType; 
+        document.getElementById('edit_is_overtime').checked = Boolean(isOvertime);
+        document.getElementById('edit_modal_date_display').textContent = scheduleDate;
+        document.getElementById('edit_schedule_status').value = scheduleStatus || '계획됨';
+        toggleEditOvertime();
+        modal.style.display = "block";
+    }
+
+    function closeEditModal() { modal.style.display = "none"; if(editForm) editForm.reset(); }
+    function toggleEditOvertime() {
+        var wt = document.getElementById('edit_work_type'); var og = document.getElementById('edit_overtime_group');
+        if(wt && og){ og.style.display=(wt.value==='하원')?'block':'none'; if(wt.value!=='하원' && document.getElementById('edit_is_overtime')) document.getElementById('edit_is_overtime').checked=false; }
+    }
+
+    if(editForm){
+        editForm.addEventListener('submit', function(e){
+            e.preventDefault();
+            const sid=document.getElementById('edit_schedule_id').value;
+            const wt=document.getElementById('edit_work_type').value;
+            const iot=document.getElementById('edit_is_overtime').checked;
+            const s_status=document.getElementById('edit_schedule_status').value;
+            const sdate=document.getElementById('edit_modal_date_display').textContent;
+
+            fetch(`/admin/schedule/${sid}/edit`, {
+                method:'POST', 
+                headers:{'Content-Type':'application/json'}, 
+                body:JSON.stringify({work_type:wt, is_overtime:iot, status: s_status})
+            })
+            .then(r=>r.json()).then(d=>{
+                if(d.success){ 
+                    flashMessage(d.message,'success'); 
+                    closeEditModal(); 
+                    refreshPageForDateDetails(sdate || lastClickedDateForDetails); 
+                }
+                else{ flashMessage('오류: '+(d.message||'알 수 없는 오류'),'danger'); }
+            }).catch(err=>{ console.error('Error:',err); flashMessage('스케줄 수정 중 네트워크 오류.','danger'); });
+        });
+    }
+
+    function deleteSchedule(sid, sDateStr){
+        if(confirm('정말로 이 스케줄을 삭제하시겠습니까?')){
+            fetch(`/admin/schedule/${sid}/delete`,{method:'POST'})
+            .then(r=>r.json()).then(d=>{
+                if(d.success){ 
+                    flashMessage(d.message,'success'); 
+                    refreshPageForDateDetails(sDateStr || lastClickedDateForDetails); 
+                }
+                else{ flashMessage('오류: '+(d.message||'알 수 없는 오류'),'danger'); }
+            }).catch(err=>{ console.error('Error:',err); flashMessage('스케줄 삭제 중 네트워크 오류.','danger'); });
+        }
+    }
+
+    function refreshPageForDateDetails(dateStr) {
+        const currentUrl = new URL(window.location.href);
+        const year = currentUrl.searchParams.get('year') || '{{ current_year_for_nav }}';
+        const month = currentUrl.searchParams.get('month') || '{{ current_month_for_nav }}';
+        let newSearch = `?year=${year}&month=${month}`;
+        if(dateStr) {
+            newSearch += `&selected_date_for_details=${dateStr}`;
+        }
+        window.location.href = currentUrl.pathname + newSearch;
+    }
+
+    function toggleOvertimeBulk(){
+        var wt=document.getElementById('work_type_bulk'); var og=document.getElementById('overtime_group_bulk');
+        if(wt && og){ og.style.display=(wt.value==='하원')?'block':'none'; if(wt.value!=='하원'&&document.getElementById('is_overtime_bulk'))document.getElementById('is_overtime_bulk').checked=false; }
+    }
+
+    function flashMessage(msg,cat='info'){ const cont=document.querySelector('.flash-messages-container')||createFlashContainer(); const adiv=document.createElement('div'); adiv.className=`alert alert-${cat}`; adiv.textContent=msg; cont.appendChild(adiv); setTimeout(()=>{ adiv.classList.add('fade-out'); adiv.addEventListener('transitionend',()=>{adiv.remove();});},3000); }
+    function createFlashContainer(){ let cont=document.querySelector('.flash-messages-container'); if(!cont){ cont=document.createElement('div'); cont.className='flash-messages-container'; const nav=document.querySelector('nav.navbar'); if(nav&&nav.parentNode)nav.parentNode.insertBefore(cont,nav.nextSibling); else document.body.insertBefore(cont,document.body.firstChild); } return cont; }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        updateSelectedDatesForBulkDisplay();
+        toggleOvertimeBulk();
+        toggleEditOvertime(); 
+        
+        window.onclick = function(event) { if (event.target == modal) closeEditModal(); }
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const dateToSelect = urlParams.get('selected_date_for_details');
+        if (dateToSelect) {
+            const targetCell = document.querySelector(`.admin-calendar td[data-date='${dateToSelect}']`);
+            if (targetCell) {
+                let schedulesDetails = [];
+                const schedulesJsonEncoded = targetCell.dataset.schedules;
+                 if(schedulesJsonEncoded) {
+                    try { schedulesDetails = JSON.parse(decodeURIComponent(schedulesJsonEncoded)); }
+                    catch (e) { console.error("Error parsing schedules JSON on load:", e); }
+                }
+                document.querySelectorAll('.admin-calendar td.selected-for-details').forEach(cell => {
+                    cell.classList.remove('selected-for-details');
+                });
+                targetCell.classList.add('selected-for-details');
+                lastClickedDateForDetails = dateToSelect;
+                showDailySchedules(dateToSelect, schedulesDetails);
+            }
+        } else { 
+            const detailsContainer = document.getElementById('daily_schedule_details_container');
+            if(detailsContainer) detailsContainer.style.display = 'none';
+        }
+    });
+</script>
+{% endblock %}

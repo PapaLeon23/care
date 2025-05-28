@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}아이 돌봄 서비스{% endblock %}</title>
+    {# Noto Sans KR 폰트 로드 (이전 코드에 있었던 것으로 가정) #}
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    {# -------- 가장 중요한 CSS 파일 링크 -------- #}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {# ----------------------------------------- #}
+    {% block head_extra %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar">
+        {# 네비게이션 바 내용 - 이전 코드에서 가져와야 합니다. 예시: #}
+        <div class="navbar-brand">
+            <a href="{{ url_for('index') }}">아이 돌봄 서비스</a>
+        </div>
+        <div class="navbar-links">
+            {% if session.user_id %}
+                <span class="username-display">{{ session.nickname }}님</span>
+                {% if session.is_admin %}
+                    <a href="{{ url_for('admin_dashboard') }}">이번달 일정</a>
+                    <!-- <a href="{{ url_for('admin_users_list') }}">사용자 관리</a> -->
+                {% else %}
+                    <a href="{{ url_for('user_dashboard') }}">이번달 일정</a>
+                {% endif %}
+                <a href="{{ url_for('logout') }}">로그아웃</a>
+            {% else %}
+                <a href="{{ url_for('login') }}">로그인</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages-container">
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <p>&copy; {{ now.year }} 아이 돌봄 일정 관리. All rights reserved.</p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

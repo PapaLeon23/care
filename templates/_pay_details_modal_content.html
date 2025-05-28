@@ -1,0 +1,34 @@
+{# templates/_pay_details_modal_content.html #}
+<h1 class="header-title" style="font-size: 1.4em; margin-bottom: 15px;">{{ year }}년 {{ month }}월 급여 산정 상세 내역</h1>
+<p style="text-align: center; font-size: 0.9em; margin-top: -10px; margin-bottom: 15px;">(정산 기간: 전월 25일 ~ 당월 24일)</p>
+
+{% if work_details and work_details|length > 0 %}
+    <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+        <thead>
+            <tr>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f0f8ff;">날짜 (요일)</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f0f8ff;">근무 형태 및 시간</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: right; background-color: #f0f8ff;">산정 시간</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: right; background-color: #f0f8ff;">산정 급여</th>
+            </tr>
+        </thead>
+        <tbody>
+            {# 개별 항목 표시는 이전과 동일하게 detail.hours 와 detail.pay 사용 #}
+            {% for detail in work_details %}
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 8px;">{{ detail.date }}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">{{ detail.shift }}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">{{ detail.hours }}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">{{ detail.pay }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="total-summary" style="margin-top: 20px; padding-top:10px; border-top: 1px solid #007BFF;">
+        {# 총계 표시 부분을 app.py에서 전달받은 포맷팅된 문자열로 변경 #}
+        <p style="font-size: 1em; margin-bottom: 5px;"><strong>총 급여:</strong> {{ grand_total_pay_str }}원</p>
+        <p style="font-size: 1em; margin-bottom: 5px;"><strong>총 근무 시간:</strong> {{ grand_total_hours_str }}시간</p>
+    </div>
+{% else %}
+    <p class="no-data" style="text-align: center; padding: 20px; color: #777;">해당 기간의 근무 완료 기록이 없습니다.</p>
+{% endif %}

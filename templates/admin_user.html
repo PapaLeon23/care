@@ -1,0 +1,95 @@
+{% extends "layout.html" %}
+{% block title %}사용자 관리{% endblock %}
+
+{% block head_extra %}
+<style>
+    .user-management-container {
+        background-color: #fff;
+        padding: 25px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+    .user-management-container h2 {
+        color: #0056b3;
+        border-bottom: 2px solid #ADD8E6;
+        padding-bottom: 10px;
+        margin-top: 0;
+        margin-bottom: 25px;
+    }
+    .users-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+    .users-table th, .users-table td {
+        border: 1px solid #ddd;
+        padding: 10px 12px;
+        text-align: left;
+        vertical-align: middle;
+    }
+    .users-table th {
+        background-color: #007BFF;
+        color: white;
+        font-weight: 500;
+    }
+    .users-table tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+    .users-table tr:hover {
+        background-color: #f1f1f1;
+    }
+    .action-buttons .btn {
+        padding: 6px 10px;
+        font-size: 0.85em;
+        margin-right: 5px;
+        text-decoration: none;
+        border-radius: 4px;
+        color: white;
+        border: none;
+        cursor: pointer;
+    }
+    .btn-edit { background-color: #28a745; /* 초록색 */ }
+    .btn-edit:hover { background-color: #218838; }
+    .btn-delete { background-color: #dc3545; /* 빨간색 */ }
+    .btn-delete:hover { background-color: #c82333; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="user-management-container">
+    <h2>사용자 계정 관리</h2>
+    <p>등록된 사용자의 정보를 관리합니다. (ID 변경은 기존 ID 삭제 후 재생성 필요)</p>
+
+    <table class="users-table">
+        <thead>
+            <tr>
+                <th>사용자 ID (Username)</th>
+                <th>관리자 권한</th>
+                <th>작업</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user_item in users %}
+            <tr>
+                <td>{{ user_item.username }}</td>
+                <td>
+                    {% if user_item.is_admin %}
+                        <span style="color: green; font-weight:bold;">관리자</span>
+                    {% else %}
+                        <span style="color: dimgray;">일반 사용자</span>
+                    {% endif %}
+                </td>
+                <td class="action-buttons">
+                    <a href="{{ url_for('admin_edit_user', user_id=user_item.id) }}" class="btn btn-edit">수정</a>
+                    {% if user_item.id != session.user_id %} {# 자기 자신은 삭제 버튼 비활성화 #}
+                    <form method="POST" action="{{ url_for('admin_delete_user', user_id=user_item.id) }}" style="display:inline;" onsubmit="return confirm('정말로 \'{{ user_item.username }}\' 사용자를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.');">
+                        <button type="submit" class="btn btn-delete">삭제</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
