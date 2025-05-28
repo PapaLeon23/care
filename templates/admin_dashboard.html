@@ -4,48 +4,42 @@
 {% block head_extra %}
 <style>
     /* admin_dashboard.html 페이지 전용 스타일 */
-    .admin-dashboard-container {
-        display: flex; /* 왼쪽과 오른쪽 영역을 가로로 배치 */
-        gap: 15px; /* 좌우 영역 사이의 간격 */
-        flex-wrap: wrap; /* 너비가 부족할 경우 오른쪽 영역이 아래로 이동 */
-        align-items: stretch; /* 자식 요소들의 높이를 동일하게 만듦 (중요) */
+    .admin-dashboard-container { 
+        display: flex; 
+        gap: 15px; 
+        flex-wrap: wrap;
+        align-items: stretch; 
     }
-
-    .admin-main-calendar-area { /* 왼쪽: 달력 + 상세 스케줄 */
-        flex: 3 1 550px; /* 비율 3, 최소 너비 550px */
+    .admin-main-calendar-area { 
+        flex: 3 1 550px; 
         display: flex;
-        flex-direction: column;
-        gap: 20px;
+        flex-direction: column; 
+        gap: 20px; 
     }
-
-    .admin-right-panel { /* 오른쪽: 요약 + 일괄 폼 */
-        flex: 1 1 320px; /* 비율 1, 최소 너비 320px */
+    .admin-right-panel { 
+        flex: 1 1 320px; 
         display: flex;
-        flex-direction: column;
-        gap: 20px;
+        flex-direction: column; 
+        gap: 20px; 
     }
 
-    /* 오른쪽 패널의 '전체 요약' 박스 스타일 */
-    .admin-right-panel .admin-summary-pane.content-box {
-        box-sizing: border-box; /* padding과 border를 너비 계산에 포함시켜, 다른 박스와의 시각적 너비 일관성 확보 */
-        flex-grow: 0;           /* 세로 방향으로 늘어나지 않음 (내용만큼의 높이) */
-        flex-shrink: 0;         /* 세로 방향으로 줄어들지 않음 */
-        /* width: 100%; */     /* 부모 너비만큼 채우도록 명시 (선택 사항, align-items: stretch 기본값으로 보통 자동) */
-    }
-
-    /* 오른쪽 패널의 '일괄 스케줄 지정' 박스 스타일 */
+    .admin-right-panel .admin-summary-pane.content-box,
     .admin-right-panel .schedule-form-wrapper.content-box {
-        box-sizing: border-box; /* padding과 border를 너비 계산에 포함 */
-        flex-grow: 1;           /* 남은 세로 공간을 모두 채우도록 함 */
-        display: flex;          /* 내부 .schedule-form-pane이 공간을 채울 수 있도록 flex 컨테이너로 설정 */
-        flex-direction: column; /* 내부 요소 수직 정렬 */
-        min-height: 0;          /* flex 아이템 내용이 넘칠 때 스크롤이 제대로 동작하도록 설정 (중요) */
-        /* width: 100%; */     /* 부모 너비만큼 채우도록 명시 (선택 사항) */
+        box-sizing: border-box;
     }
-
+    .admin-right-panel .admin-summary-pane.content-box {
+        flex-grow: 0; 
+        flex-shrink: 0; 
+    }
+    .admin-right-panel .schedule-form-wrapper.content-box {
+        flex-grow: 1; 
+        display: flex; 
+        flex-direction: column;
+        min-height: 0; 
+    }
     .admin-right-panel .schedule-form-wrapper .schedule-form-pane {
-        flex-grow: 1; /* .schedule-form-pane이 wrapper의 남은 공간을 채우도록 */
-        overflow-y: auto; /* 내용이 많을 경우 내부 스크롤 생성 */
+        flex-grow: 1; 
+        overflow-y: auto; 
     }
     
     .admin-calendar td.selected-for-details {
@@ -54,11 +48,6 @@
         background-color: #e6f7ff !important;
     }
     
-    .admin-calendar td.selected-for-bulk {
-        background-color: #34a1eb;
-        /* border: 1px dashed #ffc107; */
-    }
-
     #daily_schedule_details_container {
         margin-top: 0; 
         padding: 15px; 
@@ -102,7 +91,7 @@
         margin-left: 5px; 
     }
 
-    /* 모바일 대응 */
+    /* 모바일 대응 (예시, 실제 style.css의 규칙을 따르거나 여기서 오버라이드) */
     @media (max-width: 890px) { 
         .admin-dashboard-container {
             flex-direction: column; 
@@ -122,33 +111,33 @@
     }
     @media (max-width: 768px) {
         #daily_schedule_details_container { max-height: 180px; }
+        /* style.css에서 모바일 달력 스타일을 주로 관리하므로, 여기서는 최소화 */
     }
 </style>
 {% endblock %}
 
-
 {% block content %}
-<div class="admin-dashboard-container"> {# 전체 페이지를 감싸는 flex 컨테이너 (가로 방향) #}
+<div class="admin-dashboard-container">
     
     <div class="admin-main-calendar-area">
-        <div class="admin-calendar-pane content-box"> {# 달력 박스 #}
+        <div class="admin-calendar-pane content-box">
             <h2 class="page-main-title">{{ month_title_display }} 스케줄 관리</h2>
-            <div class="calendar-navigation"> {# style.css 공통 스타일 적용 #}
+            <div class="calendar-navigation">
                 <a href="{{ url_for('admin_dashboard', year=current_year_for_nav if current_month_for_nav > 1 else current_year_for_nav-1, month=current_month_for_nav-1 if current_month_for_nav > 1 else 12, selected_date_for_details=request.args.get('selected_date_for_details')) }}">&lt; 이전 달</a>
                 <span>{{ month_title_display }}</span>
                 <a href="{{ url_for('admin_dashboard', year=current_year_for_nav if current_month_for_nav < 12 else current_year_for_nav+1, month=current_month_for_nav+1 if current_month_for_nav < 12 else 1, selected_date_for_details=request.args.get('selected_date_for_details')) }}">다음 달 &gt;</a>
             </div>
             <div class="admin-calendar">
-                <table class="table-common"> {# style.css 공통 테이블 스타일 #}
+                <table class="table-common">
                     <thead>
                         <tr>
-                            {% for header in weekday_headers %} {# 일-토 순서 #}
+                            {% for header in weekday_headers %}
                                 {% if header == "일" %}
                                     <th class="weekend-header-sun">{{ header }}</th>
                                 {% elif header == "토" %}
                                     <th class="weekend-header-sat">{{ header }}</th>
                                 {% else %}
-                                    <th>{{ header }}</th> {# style.css .table-common th 기본 #}
+                                    <th>{{ header }}</th>
                                 {% endif %}
                             {% endfor %}
                         </tr>
@@ -162,37 +151,51 @@
                                 {% else %}
                                     <td class="clickable-day day-cell
                                         {% if day_data.is_weekend %}weekend-day-cell{% endif %}
-                                        {# selected-for-bulk, selected-for-details 클래스는 JS에서 동적 관리 #}
+                                        {% if day_data.is_today %}is-today{% endif %}
                                         "
                                         data-date="{{ day_data.date_str }}"
                                         data-schedules="{{ day_data.schedules_details | tojson | urlencode }}"
                                         onclick="handleAdminDateClick(this)">
                                         <div class="day-number-container">
                                             <span class="day-number">{{ day_data.day }}</span>
-                                            {# <small style="color:purple;">(PYW:{{ day_data.py_weekday }})</small> #}
                                             {% if day_data.schedules_details %}
                                                 {% for schedule_detail in day_data.schedules_details %}
-                                                {# 스케줄 유형별 CSS 클래스 및 상태 표시 #}
-                                                {% set work_type_text_display = schedule_detail.work_type %}
-                                                {% if schedule_detail.is_overtime %}{% set work_type_text_display = "연장" %}{% endif %}
-
-                                                {% set type_class_name = schedule_detail.work_type | lower %}
-                                                {% if schedule_detail.is_overtime %}{% set type_class_name = "하원plus연장" %}{% endif %}
-                                                
-                                                <div class="schedule-item-box type-{{ type_class_name }}" title="{{ schedule_detail.nickname }}: {{ schedule_detail.work_type }}{% if schedule_detail.is_overtime and schedule_detail.work_type == '하원'%}+연장{%endif%} ({{schedule_detail.status}})">
-                                                    <span class="schedule-type-text">
-                                                        {{ schedule_detail.nickname }}:<br>
-                                                        {# "공휴일"일 경우 work_type_text_display는 "공휴일"이 됩니다. #}
-                                                        {{ work_type_text_display if schedule_detail.work_type != '공휴일' else '공휴일' }} 
-                                                    </span>
-                                                    {% if schedule_detail.status == '계획됨' %}
-                                                        <small class="schedule-status status-planned">(계획)</small>
-                                                    {% elif schedule_detail.status == '근무 완료' %}
-                                                        <small class="schedule-status status-completed">(완료)</small>
-                                                    {% elif schedule_detail.status == '공휴일' %} {# '공휴일' 상태 표시 (선택 사항) #}
-                                                         <small class="schedule-status status-holiday">(휴일)</small>
+                                                    {# 1. CSS 클래스 이름 결정 #}
+                                                    {% set type_class_name = schedule_detail.work_type | lower %}
+                                                    {% if schedule_detail.work_type == WORK_TYPE_HOLIDAY %}
+                                                        {# WORK_TYPE_HOLIDAY가 "휴일"이면 "휴일"을 클래스로 사용 #}
+                                                        {% set type_class_name = WORK_TYPE_HOLIDAY | lower %} 
+                                                    {% elif schedule_detail.work_type == '하원' and schedule_detail.is_overtime %}
+                                                        {% set type_class_name = "하원plus연장" %}
                                                     {% endif %}
-                                                </div>
+                                                    
+                                                    {# 2. title 속성에 표시될 텍스트 결정 #}
+                                                    {% set item_title = schedule_detail.nickname ~ ": " ~ schedule_detail.work_type_display %}
+                                                    {% if schedule_detail.work_type != WORK_TYPE_HOLIDAY %}
+                                                        {% set item_title = item_title ~ " (" ~ schedule_detail.status ~ ")" %}
+                                                    {% else %}
+                                                        {% set item_title = WORK_TYPE_HOLIDAY %}
+                                                    {% endif %}
+
+                                                    <div class="schedule-item-box type-{{ type_class_name }}" title="{{ item_title }}">
+                                                        <span class="schedule-type-text">
+                                                            {# 3. 실제 화면에 표시될 텍스트 결정 #}
+                                                            {% if schedule_detail.work_type == WORK_TYPE_HOLIDAY %}
+                                                                {{ WORK_TYPE_HOLIDAY }} {# "휴일" 텍스트만 표시 #}
+                                                            {% else %}
+                                                                {{ schedule_detail.nickname }}:<br>{{ schedule_detail.work_type_display }}
+                                                            {% endif %}
+                                                        </span>
+                                                        
+                                                        {# 4. 상태 텍스트 표시 (휴일이 아닐 경우에만) #}
+                                                        {% if schedule_detail.work_type != WORK_TYPE_HOLIDAY %}
+                                                            {% if schedule_detail.status == '계획됨' %}
+                                                                <small class="schedule-status status-planned">(계획)</small>
+                                                            {% elif schedule_detail.status == '근무 완료' %}
+                                                                <small class="schedule-status status-completed">(완료)</small>
+                                                            {% endif %}
+                                                        {% endif %}
+                                                    </div>
                                                 {% endfor %}
                                             {% endif %}
                                         </div>
@@ -204,42 +207,40 @@
                     </tbody>
                 </table>
             </div>
-            {# 상세 스케줄 표시 영역 (달력 박스 내부 하단) #}
             <div id="daily_schedule_details_container" style="display: none;">
                 <h4 id="selected_date_header_for_details"></h4>
                 <ul id="daily_schedule_list_for_details" class="daily-schedule-list"></ul>
                 <p id="no_schedules_message_for_details" style="display:none; color:#777;">해당 날짜에 등록된 스케줄이 없습니다.</p>
             </div>
-            {# "지난 계획 근무 완료처리" 버튼 (달력 박스 내부 하단) #}
             <form method="POST" action="{{ url_for('admin_complete_past_planned_schedules') }}" style="margin-top: 20px; text-align: right;">
                 <button type="submit" class="button-secondary" style="width:auto;" 
-                        onclick="return confirm('오늘 이전의 모든 \'계획됨\' 상태의 근무를 \'근무 완료\'로 변경하시겠습니까? 이 작업은 되돌릴 수 없습니다.');">지난 계획 근무 완료처리</button>
+                        onclick="return confirm('오늘 이전의 모든 \'계획됨\' 상태의 근무(휴일 제외)를 \'근무 완료\'로 변경하시겠습니까? 이 작업은 되돌릴 수 없습니다.');">지난 계획 근무 완료처리</button>
             </form>
         </div>
     </div>
 
     <div class="admin-right-panel">
         <div class="admin-summary-pane content-box">
-            <h3 class="summary-title">{{ month_title_display }} 전체 요약(근무 완료 기준)</h3>
+            <h3 class="summary-title">{{ month_title_display }} 전체 요약 (근무 완료 기준)</h3>
             <div class="info-card">
-                <div class="summary-item"> {# << 공통 클래스 .summary-item 적용 #}
+                <div class="summary-item">
                     <span class="value">{{ overall_total_pay_str }}원</span>
                     <span class="label">전체 누적 급여</span>
                 </div>
-                <div class="summary-item"> {# << 공통 클래스 .summary-item 적용 #}
+                <div class="summary-item">
                     <span class="value">{{ overall_total_hours_str }}시간</span>
                     <span class="label">전체 누적 근무시간</span>
                 </div>
-                <p style="font-size:1em; color:#777; margin-top:50px;">- 선생님의 해당 월 완료된 근무 합산</p>
-                <p style="font-size:1em; color:#777; margin-bottom:5px;">- 전월 25일부터 당월 24일 기준</p>
+                <p style="font-size:0.8em; color:#777; margin-top:15px; margin-bottom: 5px;">- 모든 선생님의 해당 정산 기간 완료된 근무 합산</p>
+                <p style="font-size:0.8em; color:#777; margin-bottom: 0;">- 전월 25일부터 당월 24일 기준</p>
             </div>
         </div>
 
-        <div class="schedule-form-wrapper content-box"> {# 일괄 스케줄 지정 폼을 감싸는 박스 #}
-            <div class="schedule-form-pane"> {# 실제 폼이 있는 내부 pane (스타일은 거의 없음) #}
-                <h3 class="page-main-title">근무 스케줄 지정</h3>
+        <div class="schedule-form-wrapper content-box">
+            <div class="schedule-form-pane">
+                <h3 class="page-main-title">일괄 스케줄 지정</h3>
                 <div id="selected_dates_display_container">
-                    <p>선택된 날짜: <span id="selected_dates_text">없음</span></p>
+                    <p>선택된 날짜 (일괄 적용용): <span id="selected_dates_text">없음</span></p>
                     <small style="color: #555;">(달력에서 날짜를 클릭하여 다중 선택/해제)</small>
                 </div>
                 <form id="bulkScheduleForm" method="POST" action="{{ url_for('admin_bulk_manage_schedule') }}">
@@ -258,17 +259,17 @@
                     <div class="form-group">
                         <label for="work_type_bulk">근무 유형:</label>
                         <select id="work_type_bulk" name="work_type" onchange="toggleOvertimeBulk()">
-                            <option value="미지정">-- 선택 --</option>
+                            <option value="미지정">미지정 (스케줄 삭제)</option>
                             <option value="등원">{{ MORNING_SHIFT_DESC }}</option>
                             <option value="하원">{{ AFTERNOON_SHIFT_DESC }}</option>
-                            <option value="공휴일"> 휴일 </option> {# "공휴일" 옵션 추가 #}
+                            <option value="{{ WORK_TYPE_HOLIDAY }}">{{ WORK_TYPE_HOLIDAY }}</option>
                         </select>
                     </div>
                     <div class="form-group" id="overtime_group_bulk" style="display:none;">
                         <input type="checkbox" id="is_overtime_bulk" name="is_overtime">
                         <label for="is_overtime_bulk" class="inline-label">연장 근무 ({{ OVERTIME_SHIFT_DESC_BASE.split('(')[-1][:-1] }})</label>
                     </div>
-                    <button type="submit" class="button-primary" style="width: auto; padding: 10px 20px;">선택한 날짜에 일괄 적용</button>
+                    <button type="submit" class="button-primary">선택한 날짜에 일괄 적용</button>
                 </form>
             </div>
         </div>
@@ -277,9 +278,9 @@
 
 <div id="editScheduleModal" class="modal">
     <div class="modal-content">
-        <span class="close-button" onclick="closeEditModal()">&times;</span>
         <div class="modal-header">
             <h4>스케줄 수정 (<span id="edit_modal_date_display"></span>)</h4>
+            <span class="close-button" onclick="closeEditModal()">&times;</span>
         </div>
         <form id="editScheduleForm">
             <input type="hidden" id="edit_schedule_id" name="schedule_id">
@@ -289,7 +290,7 @@
                 <select id="edit_work_type" name="work_type" onchange="toggleEditOvertime()">
                     <option value="등원">{{ MORNING_SHIFT_DESC }}</option>
                     <option value="하원">{{ AFTERNOON_SHIFT_DESC }}</option>
-                    <option value="공휴일">근무 없음</option> {# "공휴일" 옵션 추가 #}
+                    <option value="{{ WORK_TYPE_HOLIDAY }}">{{ WORK_TYPE_HOLIDAY }}</option>
                 </select>
             </div>
             <div class="form-group" id="edit_overtime_group" style="display:none;">
@@ -301,7 +302,10 @@
                 <select id="edit_schedule_status" name="status">
                     <option value="계획됨">계획됨</option>
                     <option value="근무 완료">근무 완료</option>
-                    <option value="공휴일">공휴일</option>
+                    {# 휴일 유형은 app.py에서 상태를 '휴일'로 고정하므로, 여기서 사용자가 직접 '휴일' 상태를 선택할 필요는 없을 수 있습니다.
+                       만약 여기서 '휴일' 상태를 선택 가능하게 하려면, app.py의 admin_edit_schedule 함수 로직과 맞춰야 합니다.
+                       현재 app.py 로직은 work_type이 '휴일'이면 status도 '휴일'로 강제합니다. #}
+                    {# <option value="{{ WORK_TYPE_HOLIDAY }}">{{ WORK_TYPE_HOLIDAY }}</option> #}
                 </select>
             </div>
             <div class="modal-form-actions">
@@ -315,16 +319,11 @@
 
 {% block scripts %}
 <script>
-    // 이전 답변에서 제공한 JavaScript 전체 코드를 여기에 붙여넣습니다.
-    // (selectedDatesForBulk, lastClickedDateForDetails, updateSelectedDatesForBulkDisplay,
-    //  handleAdminDateClick, showDailySchedules, openEditModal, closeEditModal,
-    //  toggleEditOvertime, editForm 이벤트 리스너, deleteSchedule, refreshPageForDateDetails,
-    //  toggleOvertimeBulk, flashMessage, createFlashContainer, DOMContentLoaded 리스너 등)
-    // JavaScript 코드의 showDailySchedules 함수 내에서 스케줄 상태 표시 부분을
-    // 이전 답변과 같이 <small> 태그와 CSS 클래스를 사용하도록 합니다.
+    let WORK_TYPE_HOLIDAY_JS = "휴일"; // 1. JavaScript 변수에 기본값 "휴일"을 먼저 할당합니다.
+
     let selectedDatesForBulk = new Set();
     let lastClickedDateForDetails = null; 
-
+    
     function updateSelectedDatesForBulkDisplay() {
         const displaySpan = document.getElementById('selected_dates_text');
         const datesInputForSubmission = document.getElementById('dates_for_form_submission');
@@ -347,7 +346,6 @@
         }
         if (!dateStr) return;
 
-        // 일반 클릭으로 다중 선택/해제 (selected-for-bulk 클래스 토글)
         if (selectedDatesForBulk.has(dateStr)) {
             selectedDatesForBulk.delete(dateStr);
             dayCellElement.classList.remove('selected-for-bulk');
@@ -357,7 +355,6 @@
         }
         updateSelectedDatesForBulkDisplay();
 
-        // 상세 스케줄 표시: 항상 마지막으로 클릭(선택 또는 해제된) 날짜 기준으로.
         document.querySelectorAll('.admin-calendar td.selected-for-details').forEach(cell => {
             cell.classList.remove('selected-for-details');
         });
@@ -381,27 +378,31 @@
                 const li = document.createElement('li');
                 li.setAttribute('data-schedule-id', schedule.id);
 
-                let scheduleWorkTypeDisplay = schedule.work_type;
-                if (schedule.is_overtime) { 
-                    scheduleWorkTypeDisplay += "+연장";
-                }
-                let scheduleCoreText = `${schedule.nickname}: ${scheduleWorkTypeDisplay}`;
-
-                let statusHtml = '';
-                if (schedule.status === '계획됨') {
-                    statusHtml = '<small class="schedule-status status-planned">(계획)</small>';
-                } else if (schedule.status === '근무 완료') {
-                    statusHtml = '<small class="schedule-status status-completed">(완료)</small>';
+                let scheduleDisplayText;
+                if (schedule.work_type === WORK_TYPE_HOLIDAY_JS) {
+                    scheduleDisplayText = WORK_TYPE_HOLIDAY_JS;
+                } else {
+                    scheduleDisplayText = `${schedule.nickname}: ${schedule.work_type_display}`; // work_type_display 사용
+                    if (schedule.status !== WORK_TYPE_HOLIDAY_JS) { // 휴일 상태가 아닐 때만 상태 괄호 표시
+                         scheduleDisplayText += ` (${schedule.status})`;
+                    }
                 }
                 
                 li.innerHTML = `
                     <span class="schedule-text">
-                        ${scheduleCoreText}
-                        ${statusHtml} 
+                        ${scheduleDisplayText}
                     </span>
                     <div class="schedule-actions">
-                        <button class="btn-edit-sch" onclick="openEditModal(${schedule.id}, '${schedule.nickname}', '${schedule.work_type}', ${schedule.is_overtime}, '${schedule.date_str}', '${schedule.status}')">수정</button>
-                        <button class="btn-delete-sch" onclick="deleteSchedule(${schedule.id}, '${schedule.date_str}')">삭제</button>
+                        <button class="btn-edit-sch" onclick="openEditModal(
+                            ${schedule.id}, 
+                            '${dateStr}', 
+                            ${schedule.user_id}, 
+                            '${schedule.work_type}', 
+                            ${schedule.is_overtime}, 
+                            '${schedule.status}', 
+                            '${schedule.nickname}' 
+                        )">수정</button>
+                        <button class="btn-delete-sch" onclick="deleteSchedule(${schedule.id}, '${dateStr}')">삭제</button>
                     </div>
                 `;
                 listUl.appendChild(li);
@@ -415,42 +416,86 @@
     const modal = document.getElementById('editScheduleModal');
     const editForm = document.getElementById('editScheduleForm');
 
-    function openEditModal(scheduleId, userNickname, workType, isOvertime, scheduleDate, scheduleStatus) {
+    // openEditModal 함수 파라미터 순서 변경 및 nickname 추가 (showDailySchedules 호출과 일치)
+    function openEditModal(scheduleId, scheduleDate, userId, workType, isOvertime, scheduleStatus, userNickname) {
         document.getElementById('edit_schedule_id').value = scheduleId;
         document.getElementById('edit_username_display').textContent = userNickname;
         document.getElementById('edit_work_type').value = workType; 
         document.getElementById('edit_is_overtime').checked = Boolean(isOvertime);
         document.getElementById('edit_modal_date_display').textContent = scheduleDate;
-        document.getElementById('edit_schedule_status').value = scheduleStatus || '계획됨';
-        toggleEditOvertime();
+        
+        const statusSelect = document.getElementById('edit_schedule_status');
+        if (workType === WORK_TYPE_HOLIDAY_JS) {
+            // "휴일" 유형일 경우, 상태 드롭다운에서 "휴일"을 선택하고 비활성화.
+            // app.py에서 '휴일' 유형은 status도 '휴일'로 강제하므로,
+            // 수정 모달에서 상태를 사용자가 변경할 수 없도록 하는 것이 일관성 있습니다.
+            // statusSelect에 "휴일" 옵션이 있다면 그것을 선택. 없다면 첫번째 옵션 등 기본값으로 두되 disabled.
+            // 현재는 "계획됨", "근무 완료"만 있으므로, 첫 번째 옵션을 선택하고 비활성화합니다.
+            statusSelect.value = '계획됨'; // 또는 scheduleStatus (서버에서 "휴일"로 올 것임)
+            // app.py의 admin_edit_schedule 에서 휴일이면 status를 "휴일"로 강제.
+            // 따라서, 수정 모달의 status select 에는 "휴일" 옵션을 추가하거나,
+            // 아니면 휴일일때는 이 select를 비활성화하고 서버에서 알아서 "휴일"로 처리하게 둠.
+            // 아래는 휴일이면 상태를 "계획됨"으로 표시하고(어차피 서버에서 휴일로 덮어씀) 비활성화하는 예시
+            statusSelect.value = scheduleStatus; // 서버에서 받은 현재 상태(아마도 "휴일")로 설정
+            statusSelect.disabled = true; 
+        } else {
+            statusSelect.value = scheduleStatus || '계획됨';
+            statusSelect.disabled = false;
+        }
+
+        toggleEditOvertime(); // 연장 근무 체크박스 UI 업데이트 (workType 변경 후 호출)
         modal.style.display = "block";
     }
 
-    function closeEditModal() { modal.style.display = "none"; if(editForm) editForm.reset(); }
+    function closeEditModal() { 
+        // ... (기존 closeEditModal 함수 내용, statusSelect.disabled = false; 추가)
+        modal.style.display = "none"; 
+        if(editForm) {
+            editForm.reset();
+            document.getElementById('edit_schedule_status').disabled = false;
+        }
+    }
+
+
     function toggleEditOvertime() {
-        var wt = document.getElementById('edit_work_type'); var og = document.getElementById('edit_overtime_group');
-        if(wt && og){ og.style.display=(wt.value==='하원')?'block':'none'; if(wt.value!=='하원' && document.getElementById('edit_is_overtime')) document.getElementById('edit_is_overtime').checked=false; }
+        var wt_select = document.getElementById('edit_work_type'); 
+        var overtime_group = document.getElementById('edit_overtime_group');
+        var overtime_checkbox = document.getElementById('edit_is_overtime');
+
+        if(wt_select && overtime_group){ 
+            // "하원" 유형일 때만 연장근무 그룹을 보여주고, 그 외("등원", "휴일" 등)는 숨김
+            if (wt_select.value === '하원') {
+                overtime_group.style.display = 'block';
+            } else {
+                overtime_group.style.display = 'none';
+                if (overtime_checkbox) { // 체크박스가 존재하면 체크 해제
+                    overtime_checkbox.checked = false; 
+                }
+            }
+        }
     }
 
     if(editForm){
         editForm.addEventListener('submit', function(e){
             e.preventDefault();
-            const sid=document.getElementById('edit_schedule_id').value;
-            const wt=document.getElementById('edit_work_type').value;
-            const iot=document.getElementById('edit_is_overtime').checked;
-            const s_status=document.getElementById('edit_schedule_status').value;
-            const sdate=document.getElementById('edit_modal_date_display').textContent;
+            const sid = document.getElementById('edit_schedule_id').value;
+            const wt_val = document.getElementById('edit_work_type').value;
+            const iot_val = document.getElementById('edit_is_overtime').checked;
+            // 휴일 유형일 경우, 상태는 서버에서 "휴일"로 처리하므로, 여기서는 기본값을 보내거나 서버 로직에 맞춤.
+            // 현재 app.py는 work_type이 휴일이면 status도 휴일로 강제하므로, 사용자가 선택한 status를 그대로 보냄.
+            const s_status_val = document.getElementById('edit_schedule_status').value;
+            const sdate_val = document.getElementById('edit_modal_date_display').textContent;
 
             fetch(`/admin/schedule/${sid}/edit`, {
                 method:'POST', 
                 headers:{'Content-Type':'application/json'}, 
-                body:JSON.stringify({work_type:wt, is_overtime:iot, status: s_status})
+                body:JSON.stringify({work_type: wt_val, is_overtime: iot_val, status: s_status_val})
             })
             .then(r=>r.json()).then(d=>{
                 if(d.success){ 
                     flashMessage(d.message,'success'); 
                     closeEditModal(); 
-                    refreshPageForDateDetails(sdate || lastClickedDateForDetails); 
+                    refreshPageForDateDetails(sdate_val || lastClickedDateForDetails); 
                 }
                 else{ flashMessage('오류: '+(d.message||'알 수 없는 오류'),'danger'); }
             }).catch(err=>{ console.error('Error:',err); flashMessage('스케줄 수정 중 네트워크 오류.','danger'); });
@@ -482,19 +527,34 @@
     }
 
     function toggleOvertimeBulk(){
-        var wt=document.getElementById('work_type_bulk'); var og=document.getElementById('overtime_group_bulk');
-        if(wt && og){ og.style.display=(wt.value==='하원')?'block':'none'; if(wt.value!=='하원'&&document.getElementById('is_overtime_bulk'))document.getElementById('is_overtime_bulk').checked=false; }
-    }
+        var wt_select = document.getElementById('work_type_bulk'); 
+        var overtime_group = document.getElementById('overtime_group_bulk');
+        var overtime_checkbox = document.getElementById('is_overtime_bulk');
 
+        if(wt_select && overtime_group){ 
+            // "하원" 유형일 때만 연장근무 그룹을 보여주고, 그 외("등원", "휴일" 등)는 숨김
+            if (wt_select.value === '하원') {
+                overtime_group.style.display = 'block';
+            } else {
+                overtime_group.style.display = 'none';
+                if (overtime_checkbox) { // 체크박스가 존재하면 체크 해제
+                    overtime_checkbox.checked = false; 
+                }
+            }
+        }
+    }
     function flashMessage(msg,cat='info'){ const cont=document.querySelector('.flash-messages-container')||createFlashContainer(); const adiv=document.createElement('div'); adiv.className=`alert alert-${cat}`; adiv.textContent=msg; cont.appendChild(adiv); setTimeout(()=>{ adiv.classList.add('fade-out'); adiv.addEventListener('transitionend',()=>{adiv.remove();});},3000); }
     function createFlashContainer(){ let cont=document.querySelector('.flash-messages-container'); if(!cont){ cont=document.createElement('div'); cont.className='flash-messages-container'; const nav=document.querySelector('nav.navbar'); if(nav&&nav.parentNode)nav.parentNode.insertBefore(cont,nav.nextSibling); else document.body.insertBefore(cont,document.body.firstChild); } return cont; }
 
     document.addEventListener('DOMContentLoaded', function() {
         updateSelectedDatesForBulkDisplay();
-        toggleOvertimeBulk();
-        toggleEditOvertime(); 
+        toggleOvertimeBulk(); // 페이지 로드 시 일괄 지정 폼의 연장근무 옵션 상태 초기화
+        // toggleEditOvertime(); // 수정 모달은 열릴 때 호출되므로 여기서 초기 호출 불필요
         
-        window.onclick = function(event) { if (event.target == modal) closeEditModal(); }
+        window.onclick = function(event) { 
+            if (event.target == modal) closeEditModal(); 
+            // 다른 모달(payDetailsModal)에 대한 외부 클릭 처리가 있다면, 해당 로직과 병합 또는 분리 필요
+        }
         
         const urlParams = new URLSearchParams(window.location.search);
         const dateToSelect = urlParams.get('selected_date_for_details');

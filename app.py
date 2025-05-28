@@ -22,6 +22,7 @@ OVERTIME_ADDITIONAL_MINUTES = 30
 MORNING_SHIFT_DESC = f"등원 (07:00 ~ 09:00, {MORNING_HOURS}시간)"
 AFTERNOON_SHIFT_DESC = f"하원 (16:30 ~ 18:30, {AFTERNOON_HOURS}시간)"
 OVERTIME_SHIFT_DESC_BASE = f"하원 + 연장 (16:30 ~ 19:00, {AFTERNOON_HOURS + OVERTIME_ADDITIONAL_MINUTES/60:.1f}시간)"
+WORK_TYPE_HOLIDAY = "휴일"
 
 
 # --- 데이터베이스 모델 --- (기존과 동일)
@@ -118,6 +119,7 @@ def get_calendar_data(year, month, user_id_for_view=None, for_admin=False):
 
     weeks_data_for_template = []
 
+    # 스케줄 데이터 미리 로드 (이전과 동일)
     first_day_of_month = date(year, month, 1)
     last_day_of_month = date(year, month, py_calendar.monthrange(year, month)[1])
     schedules_query = WorkSchedule.query.filter(
@@ -127,47 +129,68 @@ def get_calendar_data(year, month, user_id_for_view=None, for_admin=False):
     if not for_admin and user_id_for_view:
         schedules_query = schedules_query.filter_by(user_id=user_id_for_view)
     
-    schedules_by_date = {}
+    schedules_by_date = {} # 날짜별 스케줄 객체들을 담을 딕셔너리
     all_schedules_this_month = schedules_query.all()
     
+    # 스케줄에 포함된 사용자 정보를 미리 가져오기 위한 ID 리스트 생성
     user_ids_in_schedules = list(set(s.user_id for s in all_schedules_this_month))
-    if user_id_for_view and user_id_for_view not in user_ids_in_schedules: # 현재 사용자의 정보도 포함
+    # 만약 user_id_for_view (사용자 대시보드)가 주어졌고, 해당 사용자가 이번 달 스케줄이 없더라도
+    # user_map에는 포함시켜야 할 수 있으므로 (현재 로직에서는 불필요하나, 일반적인 경우)
+    if user_id_for_view and user_id_for_view not in user_ids_in_schedules:
         user_ids_in_schedules.append(user_id_for_view)
         
     user_map_query = User.query.filter(User.id.in_(user_ids_in_schedules)).all() if user_ids_in_schedules else []
     user_map = {u.id: {'username': u.username, 'nickname': u.get_display_name()} for u in user_map_query}
 
+    # 날짜별로 스케줄 객체들을 그룹화
     for s_obj in all_schedules_this_month:
         s_date = s_obj.work_date
         if s_date not in schedules_by_date:
             schedules_by_date[s_date] = []
-        schedules_by_date[s_date].append(s_obj)
+        schedules_by_date[s_date].append(s_obj) # schedule_obj 전체를 저장
 
+    # 달력 주차별, 날짜별 루프
     for week_raw in month_calendar_weeks_raw:
         week_data_for_template_inner = []
         for day_num, weekday_val_py_std in week_raw:
-            schedules_details_for_day = []
+            schedules_details_for_day = [] # 해당 날짜의 스케줄 상세 정보들을 담을 리스트
             current_date_obj = None
             is_today_flag = False
             date_str_for_template = ''
             is_weekend_day = (weekday_val_py_std == py_calendar.SATURDAY or weekday_val_py_std == py_calendar.SUNDAY)
 
-            if day_num != 0:
+            if day_num != 0: # 실제 날짜인 경우
                 current_date_obj = date(year, month, day_num)
                 date_str_for_template = current_date_obj.strftime('%Y-%m-%d')
                 is_today_flag = (current_date_obj == date.today())
-                day_schedules_from_db = schedules_by_date.get(current_date_obj, [])
+                
+                # 위에서 그룹화한 schedules_by_date 딕셔너리에서 해당 날짜의 스케줄 객체 리스트를 가져옴
+                day_schedules_from_db_objects = schedules_by_date.get(current_date_obj, [])
 
-                for schedule_obj in day_schedules_from_db:
-                    # 관리자이거나 해당 사용자의 스케줄일 경우
+                for schedule_obj in day_schedules_from_db_objects: # 해당 날짜의 각 스케줄 객체에 대해 처리
+                    # 관리자 화면이거나, 또는 사용자 화면일 경우 해당 사용자의 스케줄만
                     if for_admin or (user_id_for_view is not None and schedule_obj.user_id == user_id_for_view):
                         worker_info = user_map.get(schedule_obj.user_id, {'username': "Unknown", 'nickname': "Unknown User"})
+                        
+                        # ======== "휴일" 처리 및 표시 텍스트 단순화 시작 ========
+                        display_nickname_for_cal = worker_info['nickname']
+                        work_type_for_cal_display = schedule_obj.work_type # 기본값은 실제 근무 유형
+
+                        if schedule_obj.work_type == WORK_TYPE_HOLIDAY:
+                            display_nickname_for_cal = ""  # "휴일"일 경우 담당자 이름 표시 안 함
+                            work_type_for_cal_display = WORK_TYPE_HOLIDAY # 달력에 "휴일"이라고만 표시
+                        elif schedule_obj.work_type == '하원' and schedule_obj.is_overtime:
+                            work_type_for_cal_display = "연장" # "하원+연장" 대신 "연장"으로만 간략히 표시 (선택 사항)
+                        # "등원"의 경우 work_type_for_cal_display는 "등원" 그대로 사용됨
+                        # ======== "휴일" 처리 및 표시 텍스트 단순화 끝 ========
+
                         detail = {
                             'id': schedule_obj.id, 
                             'user_id': schedule_obj.user_id,
                             'username': worker_info['username'], 
-                            'nickname': worker_info['nickname'],
-                            'work_type': schedule_obj.work_type,
+                            'nickname': display_nickname_for_cal,       # "휴일"일 경우 빈 문자열이 됨
+                            'work_type': schedule_obj.work_type,       # 실제 DB에 저장된 work_type (CSS 클래스용)
+                            'work_type_display': work_type_for_cal_display, # 달력에 실제 표시될 텍스트
                             'is_overtime': schedule_obj.is_overtime,
                             'date_str': date_str_for_template, 
                             'status': schedule_obj.status
@@ -176,7 +199,7 @@ def get_calendar_data(year, month, user_id_for_view=None, for_admin=False):
             
             week_data_for_template_inner.append({
                 'day': day_num,
-                'schedules_details': schedules_details_for_day,
+                'schedules_details': schedules_details_for_day, # 가공된 스케줄 상세 정보 리스트
                 'is_today': is_today_flag,
                 'date_str': date_str_for_template,
                 'is_weekend': is_weekend_day,
@@ -366,8 +389,10 @@ def admin_dashboard():
                            current_year_for_nav=year,
                            current_month_for_nav=month,
                            caregivers=caregivers,
+                           WORK_TYPE_HOLIDAY=WORK_TYPE_HOLIDAY,
                            overall_total_pay_str=f"{overall_pay:,.0f}",
-                           overall_total_hours_str=f"{overall_hours:.1f}")
+                           overall_total_hours_str=f"{overall_hours:.1f}"
+                           )
 
 # 관리자 스케줄 일괄 등록 (status는 기본값 '계획됨' 사용)
 @app.route('/admin/schedule/bulk_manage', methods=['POST'])
@@ -378,7 +403,7 @@ def admin_bulk_manage_schedule():
         dates_str = request.form.get('dates_to_process')
         form_user_id_str = request.form.get('user_id')
         form_work_type = request.form.get('work_type')
-        form_is_overtime = 'is_overtime' in request.form
+        form_is_overtime = 'is_overtime' in request.form # "휴일"일 경우 무시됨
         current_year = request.form.get('current_year', date.today().year, type=int)
         current_month = request.form.get('current_month', date.today().month, type=int)
 
@@ -394,16 +419,19 @@ def admin_bulk_manage_schedule():
 
         updated_count = 0
         for target_date in target_dates_list:
+            # 해당 날짜, 해당 유저의 모든 기존 스케줄 삭제 (휴일 포함)
             WorkSchedule.query.filter_by(work_date=target_date, user_id=form_user_id).delete()
-            if form_work_type != "미지정": # "미지정"은 스케줄 삭제를 의미
-                is_o = False # 기본값
-                status_val = '계획됨' # 기본 상태
+            
+            if form_work_type != "미지정": # "미지정"은 스케줄 삭제만을 의미
+                is_o = False
+                status_val = '계획됨' # 기본값
 
-                if form_work_type == '휴일':
-                    is_o = False # 공휴일은 연장근무 없음
-                    # status_val = '공휴일' # 상태를 '공휴일'로 하고 싶다면
+                if form_work_type == WORK_TYPE_HOLIDAY:
+                    status_val = WORK_TYPE_HOLIDAY # 상태도 "휴일"로 고정
+                    # is_overtime 은 이미 False
                 elif form_work_type == '하원':
                     is_o = form_is_overtime
+                # 등원은 is_o = False, status_val = '계획됨'
                 
                 new_schedule = WorkSchedule(
                     user_id=form_user_id, 
@@ -434,39 +462,35 @@ def admin_edit_schedule(schedule_id):
         
         new_work_type = data.get('work_type')
         new_is_overtime = data.get('is_overtime', False)
-        new_status = data.get('status', schedule.status)
+        new_status = data.get('status', schedule.status) # 상태는 클라이언트에서 전달된 값을 우선
 
-        # "공휴일" 유형 추가
-        if new_work_type not in ['등원', '하원', '휴일']: 
+        if new_work_type not in ['등원', '하원', WORK_TYPE_HOLIDAY]: 
              return jsonify({'success': False, 'message': '유효하지 않은 근무 유형입니다.'}), 400
-        if new_status not in ['계획됨', '근무 완료', '휴일']: # '공휴일' 상태도 허용 (선택 사항)
-             return jsonify({'success': False, 'message': '유효하지 않은 근무 상태입니다.'}), 400
-
-        schedule.work_type = new_work_type
-        if new_work_type == '휴일':
-            schedule.is_overtime = False # 공휴일은 연장근무 없음
-            # schedule.status = '공휴일' # 상태를 '공휴일'로 자동 변경하고 싶다면
-        elif new_work_type == '하원':
-            schedule.is_overtime = bool(new_is_overtime)
-        else: # 등원
-            schedule.is_overtime = False
         
-        if new_work_type != '휴일' or schedule.status != '휴일': # 공휴일 유형이면서 상태도 공휴일이면 상태는 그대로 유지
-             schedule.status = new_status
-
+        # 휴일로 변경 시 또는 휴일 유형일 때 상태 및 연장근무 고정
+        if new_work_type == WORK_TYPE_HOLIDAY:
+            schedule.is_overtime = False
+            schedule.status = WORK_TYPE_HOLIDAY # 상태도 "휴일"로 고정
+        else: # 등원 또는 하원
+            schedule.is_overtime = bool(new_is_overtime) if new_work_type == '하원' else False
+            if new_status not in ['계획됨', '근무 완료']: # 휴일이 아닌 근무는 이 두 상태만 가능
+                return jsonify({'success': False, 'message': '유효하지 않은 근무 상태입니다.'}), 400
+            schedule.status = new_status
+        
+        schedule.work_type = new_work_type
 
         db.session.commit()
         user = User.query.get(schedule.user_id)
         display_name = user.get_display_name() if user else "Unknown"
         
-        # 표시 텍스트에 "공휴일" 반영
         work_type_display_for_json = schedule.work_type
-        if schedule.work_type == '하원' and schedule.is_overtime:
-            work_type_display_for_json += "+연장"
-        
-        display_text_for_schedule = f"{display_name}: {work_type_display_for_json}"
-        if schedule.status != '근무 완료': # 근무 완료가 아닌 경우에만 상태 표시 (공휴일 포함)
-             display_text_for_schedule += f" ({schedule.status})"
+        if schedule.work_type == WORK_TYPE_HOLIDAY:
+            display_text_for_schedule = WORK_TYPE_HOLIDAY # 휴일은 이것만 표시
+        else:
+            if schedule.work_type == '하원' and schedule.is_overtime:
+                work_type_display_for_json += "+연장"
+            display_text_for_schedule = f"{display_name}: {work_type_display_for_json} ({schedule.status})"
+
 
         return jsonify({
             'success': True, 'message': '스케줄이 수정되었습니다.',
@@ -475,13 +499,13 @@ def admin_edit_schedule(schedule_id):
                 'username': user.username if user else "Unknown", 'nickname': display_name,
                 'work_type': schedule.work_type, 'is_overtime': schedule.is_overtime,
                 'status': schedule.status, 'date_str': schedule.work_date.strftime('%Y-%m-%d'),
-                'display_text': display_text_for_schedule # JS에서 사용할 때 이 값을 참조
+                'display_text': display_text_for_schedule
             }
         })
     except Exception as e:
         db.session.rollback(); app.logger.error(f"스케줄 수정 오류 {schedule_id}: {e}")
         return jsonify({'success': False, 'message': f'서버 오류: {e}'}), 500
-
+    
 # 관리자: 개별 스케줄 삭제 (이전과 동일)
 @app.route('/admin/schedule/<int:schedule_id>/delete', methods=['POST'])
 def admin_delete_schedule(schedule_id):
@@ -498,20 +522,22 @@ def admin_delete_schedule(schedule_id):
 # 관리자: 지난 "계획됨" 스케줄을 "근무 완료"로 일괄 변경하는 기능 (수동)
 @app.route('/admin/schedules/complete_past_planned', methods=['POST'])
 def admin_complete_past_planned_schedules():
-    if not session.get('is_admin'):
-        flash('관리자 권한이 필요합니다.', 'danger'); return redirect(url_for('admin_dashboard'))
-    
+    if 'user_id' not in session or not session.get('is_admin'):
+        flash('관리자 권한이 필요합니다.', 'danger'); return redirect(url_for('login'))
     today = date.today()
     try:
+        # "계획됨" 상태이고, "휴일" 유형이 아닌 지난 스케줄만 업데이트
         updated_count = WorkSchedule.query.filter(
             WorkSchedule.work_date < today,
-            WorkSchedule.status == '계획됨'
-        ).update({'status': '근무 완료'}, synchronize_session=False) # synchronize_session 옵션 주의
+            WorkSchedule.status == '계획됨',
+            WorkSchedule.work_type != WORK_TYPE_HOLIDAY # 휴일 유형 제외
+        ).update({'status': '근무 완료'}, synchronize_session=False)
+        
         db.session.commit()
         if updated_count > 0:
-            flash(f"{updated_count}개의 지난 '계획됨' 근무가 '근무 완료' 상태로 업데이트되었습니다.", 'success')
+            flash(f"{updated_count}개의 지난 '계획됨' 스케줄이 '근무 완료'로 처리되었습니다.", "success")
         else:
-            flash("업데이트할 지난 '계획됨' 근무가 없습니다.", 'info')
+            flash("업데이트할 지난 '계획됨' 스케줄이 없습니다.", "info")
     except Exception as e:
         db.session.rollback()
         flash(f"지난 근무 업데이트 중 오류 발생: {e}", "danger")
