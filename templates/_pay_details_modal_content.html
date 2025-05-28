@@ -16,8 +16,8 @@
             {# 개별 항목 표시는 이전과 동일하게 detail.hours 와 detail.pay 사용 #}
             {% for detail in work_details %}
                 <tr>
-                    <td style="border: 1px solid #ddd; padding: 8px;">{{ detail.date }}</td>
-                    <td style="border: 1px solid #ddd; padding: 8px;">{{ detail.shift }}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">{{ detail.date }}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">{{ detail.shift }}</td>
                     <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">{{ detail.hours }}</td>
                     <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">{{ detail.pay }}</td>
                 </tr>
