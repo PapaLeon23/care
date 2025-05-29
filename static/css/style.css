@@ -704,11 +704,11 @@ footer {
         margin-bottom: 15px;
     }
     .calendar-navigation a {
-        font-size: 1em !important;  /* 명확한 적용을 위해 !important 사용 (최후의 수단) */
+        font-size: 1.5em !important;  /* 명확한 적용을 위해 !important 사용 (최후의 수단) */
         padding: 4px 6px !important;   
     }
     .calendar-navigation span { 
-        font-size: 1.1em !important;   /* 명확한 적용을 위해 !important 사용 (최후의 수단) */
+        font-size: 1.6em !important;   /* 명확한 적용을 위해 !important 사용 (최후의 수단) */
         margin: 0 6px !important;       
     }
 
