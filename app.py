@@ -671,5 +671,5 @@ def init_db_command():
     db.session.commit(); print("초기 사용자 데이터가 커밋되었습니다.")
 
 
-# if __name__ == '__main__':
-#     app.run(debug=False)
+if __name__ == '__main__':
+    app.run(debug=True)

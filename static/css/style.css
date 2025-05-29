@@ -250,23 +250,29 @@ footer {
     text-align: center;
 }
 .table-common .day-number { font-size: 0.9em; color: #555; margin-bottom: 5px; display:block; }
+
 .table-common td.is-today {
-    border: 3px solid var(--primary-color) !important; /* 예: 기본 테두리 색상 또는 약간 연한 파란색 */
-    background-color: transparent !important; /* 다른 배경색과의 충돌 방지 */
+    border: 1px solid var(--border-color) !important; /* 다른 날짜 셀과 동일한 기본 테두리로 변경 */
+    outline: 2px solid var(--primary-color-dark) !important; /* 아웃라인으로 강조 */
+    outline-offset: -2px; /* 아웃라인을 셀 안쪽으로 살짝 이동 (테두리처럼 보이게) */
+                               /* 또는 -1px (기본 테두리 1px 고려) */
+    /* 기존 background-color 관련 스타일은 유지 (예: 오늘이 주말일 경우 등) */
 }
+
+
 .table-common td.is-today .day-number { font-weight: bold; color: var(--primary-color-dark); }
 
 /* 스케줄 아이템 및 상태 표시 스타일 (사용자/관리자 공통) */
 .schedule-item-box {
-    font-size: 0.9em; padding: 4px 6px; border-radius: var(--border-radius-base);
-    display: inline-block; margin-top: 4px; border: 1px solid transparent;
+    font-size: 1em; padding: 4px 6px; border-radius: var(--border-radius-base);
+    display: inline-block; margin-top: 4px;  margin-left: auto; margin-right: auto; border: 1px solid transparent;
     text-align: center; line-height: 1.4; width: 90%; box-sizing: border-box;
 }
 .schedule-item-box .schedule-type-text { display: block; font-weight: 500;
     word-break: keep-all; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .schedule-item-box small.schedule-status {
-    display: block; font-style: normal; font-size: 0.9em;
+    display: block; font-style: normal; font-size: 1em;
     margin-top: 2px; line-height: 1.2;
 }
 .schedule-item-box small.status-planned { color: var(--planned-schedule-color); }
@@ -295,7 +301,7 @@ footer {
     justify-content: center;
     align-items: center;
     padding: 8px 4px; /* 패딩 조정으로 텍스트만 있을 때 보기 좋게 */
-    min-height: 2.5em; /* 모바일 환경에서 다른 항목들과 높이를 맞추기 위함 (선택 사항) */
+    min-height: 5.2em; /* 모바일 환경에서 다른 항목들과 높이를 맞추기 위함 (선택 사항) */
 }
 
 .schedule-form-wrapper { /* .content-box 클래스와 함께 사용될 경우 */
@@ -636,28 +642,47 @@ footer {
         overflow: visible;    /* 내용 넘칠 경우 보이도록 (잘리지 않게) */
         text-overflow: clip;  /* ellipsis 효과 제거 */
         word-break: break-all;/* 단어 단위 줄바꿈이 어려울 경우 글자 단위로도 줄바꿈 허용 */
-        padding-top: 10px;
+        padding-top: 11px;
         /* display: block; */ /* 이미 block 이지만 명시 */
         line-height: 1.5;     /* 줄 간격을 약간 주어 가독성 확보 */
     }
-    
+   
     .schedule-item-box small.schedule-status { font-size: 0.85em; }
     .table-common .day-number { font-size: 0.85em; }
-    .user-dashboard .calendar td.is-today .day-number { width: 20px; height: 20px; line-height: 18px; }
+    .user-dashboard .calendar td.is-today .day-number { width: 20px; height: 20px; border: 0.2px; line-height: 18px; }
     .user-dashboard .schedule-item-box {
-        font-size: 0.8em; /* 예: 기존 0.7em 에서 약간 키움 (조절 가능) */
-        /* width: 95%; /* 기존 너비 유지 또는 조정 */
-        /* line-height, padding 등도 필요시 조정 */
+        font-size: 0.85em; /* 예: 기존 0.8em에서 약간 더 키움 (조절 가능) */
+        line-height: 1.3;   /* 줄 간격 확보 */
+        padding: 3px 5px;   /* 패딩 조정으로 내부 공간 확보 */
+    }
+
+    .user-dashboard .schedule-item-box .schedule-type-text {
+        font-weight: 500; /* 적절한 굵기 유지 */
+        /* 이미 두 줄 표시 및 word-break 등은 이전 답변에서 처리됨 */
+    }
+
+    /* 사용자 대시보드 달력 내 스케줄 상태 텍스트 ((계획), (완료)) */
+    .user-dashboard .schedule-item-box small.schedule-status {
+        font-size: 0.9em;  /* 부모(.schedule-item-box) 폰트 크기 대비 0.9em (상대적으로 키움) */
+        display: block;    /* 블록 요소로 만들어 공간 확보 */
+        margin-top: 2px;   /* 위 텍스트와의 간격 */
+        font-weight: normal; /* 일반 굵기 */
+    }
+    .user-dashboard .schedule-item-box small.status-planned {
+        color: var(--planned-schedule-color); /* 기존 색상 유지 또는 더 잘 보이는 색으로 변경 */
+    }
+    .user-dashboard .schedule-item-box small.status-completed {
+        color: var(--success-color); /* 기존 색상 유지 또는 더 잘 보이는 색으로 변경 */
     }
 
     #daily_schedule_details_container { max-height: 180px; }
     
     .calendar-navigation a {
-        font-size: 0.7em; /* 기존 1.2em 또는 1.25em 에서 축소 */
+        font-size: 1.0em; /* 기존 1.2em 또는 1.25em 에서 축소 */
         padding: 4px 6px;
     }
     .calendar-navigation span {
-        font-size: 0.7em;   /* 기존 1.3em 또는 1.4em 에서 축소 */
+        font-size: 1.0em;   /* 기존 1.3em 또는 1.4em 에서 축소 */
         margin: 0 8px;
     }
 
@@ -715,7 +740,7 @@ footer {
         height: 100%;      /* 명시적인 셀 높이(100px) 상속 대신 내용에 맞추도록 */
     }
     .table-common .day-number { font-size: 0.8em; }
-    .user-dashboard .calendar td.is-today .day-number { width: 18px; height: 18px; line-height: 16px; }
+    .user-dashboard .calendar td.is-today .day-number { width: 18px; height: 18px; border: 0.1px; line-height: 16px; }
     .admin-summary-pane .summary-item .value {
         font-size: 1.3em; /* 1.5em에서 1.3em으로 줄임 (원하는 크기로 조절) */
     }
@@ -736,7 +761,7 @@ footer {
     .content-box h3.page-main-title { font-size: 1.15em; }
     .content-box .summary-title { font-size: 1.05em; }
     .user-dashboard .schedule-item-box {
-        font-size: 0.75em; /* 예: 기존 0.6em 또는 0.65em 에서 약간 키움 (조절 가능) */
+        font-size: 0.8em; /* 예: 기존 0.75em에서 약간 더 키움 */
     }
     .user-dashboard .summary-item .value { font-size: 1.5em; }
     .user-dashboard .summary-item .label { font-size: 0.75em; }
