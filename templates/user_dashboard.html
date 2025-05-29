@@ -17,11 +17,13 @@
         flex: 2 1 350px; /* 비율, 최소 너비. style.css에서도 정의 가능 */
     }
     
-    .calendar-navigation { /* style.css 에도 정의되어 있음, 여기서 오버라이드 가능 */
-        text-align: center;
-        margin-bottom: 20px; /* 여백 증가 */
-    }
-    .calendar-navigation a {
+/* ======== 아래 .calendar-navigation 관련 스타일들을 삭제 또는 주석 처리 ======== */
+/*
+    /* .calendar-navigation { /* style.css 에도 정의되어 있음, 여기서 오버라이드 가능 */
+        /* text-align: center;
+        margin-bottom: 20px; 여백 증가 */
+    /* } */
+    /* .calendar-navigation a {
         text-decoration: none;
         color: var(--primary-color);
         font-size: 1.25em;
@@ -29,18 +31,20 @@
         font-weight: 500;
         transition: color 0.2s ease, background-color 0.2s ease;
         border-radius: var(--border-radius-base);
-    }
-    .calendar-navigation a:hover {
+    } */
+    /* .calendar-navigation a:hover {
         color: var(--primary-color-dark);
         background-color: #e9ecef;
-    }
-    .calendar-navigation span {
+    } */
+    /* .calendar-navigation span {
         font-size: 1.4em;
         font-weight: bold;
         color: var(--text-color);
         margin: 0 20px;
         vertical-align: middle;
-    }
+    } */
+
+    /* ====================================================================== */
 
     /* 달력 테이블 관련 스타일은 대부분 style.css의 .table-common 및 .user-dashboard .calendar 규칙을 따름 */
     .user-dashboard .calendar td .day-number-container { /* 날짜 셀 내용물 최소 높이 확보 */

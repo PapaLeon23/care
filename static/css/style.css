@@ -300,7 +300,7 @@ footer {
     display: flex; /* 내부 텍스트를 중앙 정렬하기 위함 (선택 사항) */
     justify-content: center;
     align-items: center;
-    padding: 8px 4px; /* 패딩 조정으로 텍스트만 있을 때 보기 좋게 */
+    padding: 7px 4px; /* 패딩 조정으로 텍스트만 있을 때 보기 좋게 */
     min-height: 5.2em; /* 모바일 환경에서 다른 항목들과 높이를 맞추기 위함 (선택 사항) */
 }
 
