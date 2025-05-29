@@ -196,21 +196,43 @@ footer {
     margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;
 }
 
-/* 달력 네비게이션 스타일 통일 (공통) */
+/* 공통 달력 네비게이션 컨테이너 스타일 */
 .calendar-navigation {
-    text-align: center; margin-bottom: 20px; display: flex;
-    align-items: center; justify-content: center;
+    text-align: center;
+    margin-top: 15px;    /* 기존보다 상단 여백을 조금 줄일 수 있습니다. */
+    margin-bottom: 20px; 
+    display: flex;       
+    align-items: center;  
+    justify-content: center; 
+    width: 100%; /* 부모 요소 너비에 꽉 차도록 */
+    box-sizing: border-box; /* 패딩, 테두리를 너비에 포함 */
 }
+
+/* 달력 네비게이션 링크 (< 이전 달, 다음 달 >) - 데스크톱 기본 */
 .calendar-navigation a {
-    text-decoration: none; color: var(--primary-color); font-size: 1.2em;
-    padding: 6px 12px; font-weight: 500;
+    text-decoration: none;
+    color: var(--primary-color);
+    font-size: 1.1em;  /* 데스크톱 기본 크기 (조금 작게 조정) */
+    padding: 5px 10px; /* 데스크톱 기본 패딩 (조금 작게 조정) */
+    font-weight: 500;
     transition: color 0.2s ease, background-color 0.2s ease;
-    border-radius: var(--border-radius-base); line-height: 1.5;
+    border-radius: var(--border-radius-base);
+    line-height: 1.4; 
+    white-space: nowrap; /* 줄바꿈 방지 */
 }
-.calendar-navigation a:hover { color: var(--primary-color-dark); background-color: #e9ecef; }
-.calendar-navigation span {
-    font-size: 1.3em; font-weight: bold; color: var(--text-color);
-    margin: 0 15px; line-height: 1.5;
+.calendar-navigation a:hover {
+    color: var(--primary-color-dark);
+    background-color: #e9ecef;
+}
+
+/* 달력 네비게이션 '년월' 텍스트 - 데스크톱 기본 */
+.calendar-navigation span { 
+    font-size: 1.2em;  /* 데스크톱 기본 크기 (조금 작게 조정) */
+    font-weight: bold;
+    color: var(--text-color);
+    margin: 0 10px; /* 좌우 여백 (조금 작게 조정) */
+    line-height: 1.4;
+    white-space: nowrap; /* 줄바꿈 방지 */
 }
 
 /* 테이블 공통 스타일 (달력 및 기타 테이블) */
@@ -677,13 +699,17 @@ footer {
 
     #daily_schedule_details_container { max-height: 180px; }
     
-    .calendar-navigation a {
-        font-size: 1.0em; /* 기존 1.2em 또는 1.25em 에서 축소 */
-        padding: 4px 6px;
+    .calendar-navigation {
+        margin-top: 10px;
+        margin-bottom: 15px;
     }
-    .calendar-navigation span {
-        font-size: 1.0em;   /* 기존 1.3em 또는 1.4em 에서 축소 */
-        margin: 0 8px;
+    .calendar-navigation a {
+        font-size: 1em !important;  /* 명확한 적용을 위해 !important 사용 (최후의 수단) */
+        padding: 4px 6px !important;   
+    }
+    .calendar-navigation span { 
+        font-size: 1.1em !important;   /* 명확한 적용을 위해 !important 사용 (최후의 수단) */
+        margin: 0 6px !important;       
     }
 
     .modal-content { margin: 5vh auto; padding: 20px; }
@@ -746,12 +772,12 @@ footer {
     }
 
     .calendar-navigation a {
-        font-size: 0.6em;
-        padding: 3px 5px;
+        font-size: 0.75em !important; /* 명확한 적용을 위해 !important 사용 */
+        padding: 3px 5px !important;
     }
     .calendar-navigation span {
-        font-size: 0.6em;
-        margin: 0 5px;
+        font-size: 0.85em !important; /* 명확한 적용을 위해 !important 사용 */
+        margin: 0 4px !important;
     }
 
     .alert { width: calc(100% - 20px); padding: 8px 12px; font-size: 0.8em; }
