@@ -115,11 +115,12 @@ def get_monthly_work_summary(user_id, year, month):
 def get_calendar_data(year, month, user_id_for_view=None, for_admin=False):
     py_calendar.setfirstweekday(py_calendar.MONDAY) 
     cal = py_calendar.Calendar()
+    # 7일 기준의 주별 달력 데이터를 가져옵니다.
     month_calendar_weeks_raw = cal.monthdays2calendar(year, month) 
 
     weeks_data_for_template = []
 
-    # 스케줄 데이터 미리 로드 (이전과 동일)
+    # 스케줄 데이터 미리 로드 로직 (기존과 동일)
     first_day_of_month = date(year, month, 1)
     last_day_of_month = date(year, month, py_calendar.monthrange(year, month)[1])
     schedules_query = WorkSchedule.query.filter(
@@ -129,85 +130,85 @@ def get_calendar_data(year, month, user_id_for_view=None, for_admin=False):
     if not for_admin and user_id_for_view:
         schedules_query = schedules_query.filter_by(user_id=user_id_for_view)
     
-    schedules_by_date = {} # 날짜별 스케줄 객체들을 담을 딕셔너리
+    schedules_by_date = {}
     all_schedules_this_month = schedules_query.all()
     
-    # 스케줄에 포함된 사용자 정보를 미리 가져오기 위한 ID 리스트 생성
     user_ids_in_schedules = list(set(s.user_id for s in all_schedules_this_month))
-    # 만약 user_id_for_view (사용자 대시보드)가 주어졌고, 해당 사용자가 이번 달 스케줄이 없더라도
-    # user_map에는 포함시켜야 할 수 있으므로 (현재 로직에서는 불필요하나, 일반적인 경우)
     if user_id_for_view and user_id_for_view not in user_ids_in_schedules:
         user_ids_in_schedules.append(user_id_for_view)
         
     user_map_query = User.query.filter(User.id.in_(user_ids_in_schedules)).all() if user_ids_in_schedules else []
     user_map = {u.id: {'username': u.username, 'nickname': u.get_display_name()} for u in user_map_query}
 
-    # 날짜별로 스케줄 객체들을 그룹화
     for s_obj in all_schedules_this_month:
         s_date = s_obj.work_date
         if s_date not in schedules_by_date:
             schedules_by_date[s_date] = []
-        schedules_by_date[s_date].append(s_obj) # schedule_obj 전체를 저장
+        schedules_by_date[s_date].append(s_obj)
 
-    # 달력 주차별, 날짜별 루프
+    # 달력 주차별 루프
     for week_raw in month_calendar_weeks_raw:
         week_data_for_template_inner = []
+        # week_raw는 7일치 데이터를 포함 (월=0, 화=1, ..., 금=4, 토=5, 일=6)
         for day_num, weekday_val_py_std in week_raw:
-            schedules_details_for_day = [] # 해당 날짜의 스케줄 상세 정보들을 담을 리스트
-            current_date_obj = None
-            is_today_flag = False
-            date_str_for_template = ''
-            is_weekend_day = (weekday_val_py_std == py_calendar.SATURDAY or weekday_val_py_std == py_calendar.SUNDAY)
+            
+            # ======== 월요일부터 금요일까지만 처리하도록 조건 추가 ========
+            if weekday_val_py_std <= 4: # 월(0) ~ 금(4)
+                schedules_details_for_day = []
+                current_date_obj = None
+                is_today_flag = False
+                date_str_for_template = ''
+                is_weekend_day = False # 이제 주말은 표시하지 않으므로 항상 False
 
-            if day_num != 0: # 실제 날짜인 경우
-                current_date_obj = date(year, month, day_num)
-                date_str_for_template = current_date_obj.strftime('%Y-%m-%d')
-                is_today_flag = (current_date_obj == date.today())
+                if day_num != 0:
+                    current_date_obj = date(year, month, day_num)
+                    date_str_for_template = current_date_obj.strftime('%Y-%m-%d')
+                    is_today_flag = (current_date_obj == date.today())
+                    
+                    day_schedules_from_db_objects = schedules_by_date.get(current_date_obj, [])
+
+                    for schedule_obj in day_schedules_from_db_objects:
+                        if for_admin or (user_id_for_view is not None and schedule_obj.user_id == user_id_for_view):
+                            worker_info = user_map.get(schedule_obj.user_id, {'username': "Unknown", 'nickname': "Unknown User"})
+                            
+                            display_nickname_for_cal = worker_info['nickname']
+                            work_type_for_cal_display = schedule_obj.work_type
+
+                            if schedule_obj.work_type == WORK_TYPE_HOLIDAY:
+                                display_nickname_for_cal = ""
+                                work_type_for_cal_display = WORK_TYPE_HOLIDAY
+                            elif schedule_obj.work_type == '하원' and schedule_obj.is_overtime:
+                                work_type_for_cal_display = "연장"
+                            
+                            schedules_details_for_day.append({
+                                'id': schedule_obj.id, 
+                                'user_id': schedule_obj.user_id,
+                                'username': worker_info['username'], 
+                                'nickname': display_nickname_for_cal,
+                                'work_type': schedule_obj.work_type,
+                                'work_type_display': work_type_for_cal_display,
+                                'is_overtime': schedule_obj.is_overtime,
+                                'date_str': date_str_for_template, 
+                                'status': schedule_obj.status
+                            })
                 
-                # 위에서 그룹화한 schedules_by_date 딕셔너리에서 해당 날짜의 스케줄 객체 리스트를 가져옴
-                day_schedules_from_db_objects = schedules_by_date.get(current_date_obj, [])
+                week_data_for_template_inner.append({
+                    'day': day_num,
+                    'schedules_details': schedules_details_for_day,
+                    'is_today': is_today_flag,
+                    'date_str': date_str_for_template,
+                    'is_weekend': is_weekend_day,
+                    'py_weekday': weekday_val_py_std
+                })
+            # =========================================================
 
-                for schedule_obj in day_schedules_from_db_objects: # 해당 날짜의 각 스케줄 객체에 대해 처리
-                    # 관리자 화면이거나, 또는 사용자 화면일 경우 해당 사용자의 스케줄만
-                    if for_admin or (user_id_for_view is not None and schedule_obj.user_id == user_id_for_view):
-                        worker_info = user_map.get(schedule_obj.user_id, {'username': "Unknown", 'nickname': "Unknown User"})
-                        
-                        # ======== "휴일" 처리 및 표시 텍스트 단순화 시작 ========
-                        display_nickname_for_cal = worker_info['nickname']
-                        work_type_for_cal_display = schedule_obj.work_type # 기본값은 실제 근무 유형
-
-                        if schedule_obj.work_type == WORK_TYPE_HOLIDAY:
-                            display_nickname_for_cal = ""  # "휴일"일 경우 담당자 이름 표시 안 함
-                            work_type_for_cal_display = WORK_TYPE_HOLIDAY # 달력에 "휴일"이라고만 표시
-                        elif schedule_obj.work_type == '하원' and schedule_obj.is_overtime:
-                            work_type_for_cal_display = "연장" # "하원+연장" 대신 "연장"으로만 간략히 표시 (선택 사항)
-                        # "등원"의 경우 work_type_for_cal_display는 "등원" 그대로 사용됨
-                        # ======== "휴일" 처리 및 표시 텍스트 단순화 끝 ========
-
-                        detail = {
-                            'id': schedule_obj.id, 
-                            'user_id': schedule_obj.user_id,
-                            'username': worker_info['username'], 
-                            'nickname': display_nickname_for_cal,       # "휴일"일 경우 빈 문자열이 됨
-                            'work_type': schedule_obj.work_type,       # 실제 DB에 저장된 work_type (CSS 클래스용)
-                            'work_type_display': work_type_for_cal_display, # 달력에 실제 표시될 텍스트
-                            'is_overtime': schedule_obj.is_overtime,
-                            'date_str': date_str_for_template, 
-                            'status': schedule_obj.status
-                        }
-                        schedules_details_for_day.append(detail)
+        # 주말만 있던 빈 주(week)는 추가하지 않도록 함 (예: 월초, 월말)
+        if week_data_for_template_inner:
+            weeks_data_for_template.append(week_data_for_template_inner)
             
-            week_data_for_template_inner.append({
-                'day': day_num,
-                'schedules_details': schedules_details_for_day, # 가공된 스케줄 상세 정보 리스트
-                'is_today': is_today_flag,
-                'date_str': date_str_for_template,
-                'is_weekend': is_weekend_day,
-                'py_weekday': weekday_val_py_std
-            })
-        weeks_data_for_template.append(week_data_for_template_inner)
-            
-    weekday_headers = ["월", "화", "수", "목", "금", "토", "일"] 
+    # ======== 요일 헤더를 월요일부터 금요일까지만 반환 ========
+    weekday_headers = ["월", "화", "수", "목", "금"] 
+    # =====================================================
     
     return weeks_data_for_template, weekday_headers, f"{year}년 {month}월"
 

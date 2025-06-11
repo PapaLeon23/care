@@ -237,18 +237,33 @@ footer {
 
 /* 테이블 공통 스타일 (달력 및 기타 테이블) */
 .table-common {
-    width: 100%; border-collapse: collapse; margin-top: 1rem;
-    font-size: 0.9em; table-layout: fixed;
-    margin-bottom: 0; /* 달력 테이블 하단 마진 제거 (부모 pane의 패딩으로 간격 조절) */
+    width: 100%; 
+    border-collapse: collapse; 
+    margin-top: 1rem;
+    font-size: 0.9em; 
+    table-layout: fixed;
+    margin-bottom: 0;
 }
 .table-common th, .table-common td {
-    border: 1px solid var(--border-color); padding: 8px 5px; text-align: center;
-    vertical-align: top; box-sizing: border-box; overflow-wrap: break-word;
-    word-break: break-all; width: calc(100% / 7);
-    height: 100px; /* 달력 셀 높이 약간 증가 (콘텐츠 양에 따라 조절) */
+    border: 1px solid var(--border-color); 
+    padding: 8px 5px; 
+    text-align: center;
+    vertical-align: top; 
+    box-sizing: border-box; 
+    overflow-wrap: break-word;
+    word-break: break-all;
+    
+    /* ======== 날짜 칸 너비 계산 방식 수정 ======== */
+    width: calc(100% / 5); /* 기존 calc(100% / 7) 에서 변경 */
+    /* ======================================= */
+    
+    height: 100px; 
 }
-.table-common th { /* 달력 헤더: 사용자 화면 스타일로 통일 */
-    background-color: #87CEEB; color: var(--white-color); font-weight: normal; 
+.table-common th { 
+    background-color: #87CEEB; 
+    color: var(--white-color); 
+    font-weight: normal; 
+    /* 주말 헤더 스타일은 이제 사용되지 않지만, 다른 곳에서 사용할 수 있으므로 유지 */
 }
 .table-common th.weekend-header-sun, .table-common th.weekend-header-sat {
     background-color: var(--light-blue-accent); color: var(--primary-color-dark);
@@ -286,13 +301,27 @@ footer {
 
 /* 스케줄 아이템 및 상태 표시 스타일 (사용자/관리자 공통) */
 .schedule-item-box {
-    font-size: 1em; padding: 4px 6px; border-radius: var(--border-radius-base);
-    display: inline-block; margin-top: 4px;  margin-left: auto; margin-right: auto; border: 1px solid transparent;
-    text-align: center; line-height: 1.4; width: 90%; box-sizing: border-box;
+    /* ======== 텍스트와 박스 크기 키우기 (데스크톱) ======== */
+    font-size: 1em; /* 기존 0.9em 에서 키움 (조절 가능) */
+    padding: 5px 7px; /* 내부 패딩 약간 증가 */
+    /* ================================================== */
+    border-radius: var(--border-radius-base);
+    display: block; /* block으로 변경하여 margin auto 적용 */
+    margin-top: 4px;
+    margin-left: auto;  /* 수평 중앙 정렬 */
+    margin-right: auto; /* 수평 중앙 정렬 */
+    border: 1px solid transparent;
+    line-height: 1.4; 
+    width: 90%; 
+    box-sizing: border-box;
 }
-.schedule-item-box .schedule-type-text { display: block; font-weight: 500;
-    word-break: keep-all; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+.schedule-item-box .schedule-type-text { 
+    display: block; 
+    font-weight: 500;
+    /* ... (기존 white-space, overflow 등은 유지, 모바일에서 덮어씀) ... */
+    text-align: center; /* 내부 텍스트 가운데 정렬 */
 }
+
 .schedule-item-box small.schedule-status {
     display: block; font-style: normal; font-size: 1em;
     margin-top: 2px; line-height: 1.2;
@@ -333,7 +362,7 @@ footer {
 
 /* 관리자 달력 스케줄 아이템 (이름 포함 시 폰트 미세 조정) */
 .admin-calendar .schedule-item-box { /* 관리자 달력 내 스케줄 박스 */
-    font-size: 0.8em; /* 다른 달력보다 약간 작게 */
+    font-size: 0.9em; /* 다른 달력보다 약간 작게 */
 }
 
 /* 관리자 대시보드 특정 스타일 */
@@ -652,7 +681,7 @@ footer {
     }
     
     .schedule-item-box {
-        font-size: 0.8em; /* 모바일에서 스케줄 박스 폰트 크기 조정 (기존 0.75em 보다 작게 또는 동일하게) */
+        font-size: 0.9em; /* 모바일에서 스케줄 박스 폰트 크기 조정 (기존 0.75em 보다 작게 또는 동일하게) */
         /* line-height: 1.2; */ /* 줄 간격 조정 (필요시) */
         /* padding: 2px 4px; */ /* 내부 패딩 조정 (필요시) */
         width: 100%; /* 박스 너비를 조금 더 확보 */
@@ -761,7 +790,7 @@ footer {
     }
 
     .schedule-item-box {
-        font-size: 0.65em; /* 더 작은 화면에서 스케줄 박스 폰트 크기 (기존 0.7em 보다 작게 또는 동일하게) */
+        font-size: 0.85em; /* 더 작은 화면에서 스케줄 박스 폰트 크기 (기존 0.7em 보다 작게 또는 동일하게) */
         width: 100%; /* 박스 너비를 조금 더 확보 */
         height: 100%;      /* 명시적인 셀 높이(100px) 상속 대신 내용에 맞추도록 */
     }
