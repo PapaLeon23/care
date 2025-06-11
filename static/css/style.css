@@ -668,7 +668,7 @@ footer {
     .table-common th {
         height: auto;      /* 명시적인 셀 높이(100px) 상속 대신 내용에 맞추도록 */
         padding: 6px 3px;  /* 세로 패딩을 줄여 높이 감소 (기존 8px 5px) */
-        font-size: 0.85em; /* 헤더 폰트 크기도 약간 줄임 (선택 사항) */
+        font-size: 1em; /* 헤더 폰트 크기도 약간 줄임 (선택 사항) */
     }
 
     .table-common td {
@@ -677,11 +677,11 @@ footer {
     }
 
     .admin-summary-pane .summary-item .value {
-        font-size: 1.5em; /* 기존 2em에서 1.5em으로 줄임 (원하는 크기로 조절) */
+        font-size: 2em; /* 기존 2em에서 1.5em으로 줄임 (원하는 크기로 조절) */
     }
     
     .schedule-item-box {
-        font-size: 0.9em; /* 모바일에서 스케줄 박스 폰트 크기 조정 (기존 0.75em 보다 작게 또는 동일하게) */
+        font-size: 1.2em; /* 모바일에서 스케줄 박스 폰트 크기 조정 (기존 0.75em 보다 작게 또는 동일하게) */
         /* line-height: 1.2; */ /* 줄 간격 조정 (필요시) */
         /* padding: 2px 4px; */ /* 내부 패딩 조정 (필요시) */
         width: 100%; /* 박스 너비를 조금 더 확보 */
@@ -702,7 +702,7 @@ footer {
     .table-common .day-number { font-size: 0.85em; }
     .user-dashboard .calendar td.is-today .day-number { width: 20px; height: 20px; border: 0.2px; line-height: 18px; }
     .user-dashboard .schedule-item-box {
-        font-size: 0.85em; /* 예: 기존 0.8em에서 약간 더 키움 (조절 가능) */
+        font-size: 1em; /* 예: 기존 0.8em에서 약간 더 키움 (조절 가능) */
         line-height: 1.3;   /* 줄 간격 확보 */
         padding: 3px 5px;   /* 패딩 조정으로 내부 공간 확보 */
     }
@@ -714,7 +714,7 @@ footer {
 
     /* 사용자 대시보드 달력 내 스케줄 상태 텍스트 ((계획), (완료)) */
     .user-dashboard .schedule-item-box small.schedule-status {
-        font-size: 0.9em;  /* 부모(.schedule-item-box) 폰트 크기 대비 0.9em (상대적으로 키움) */
+        font-size: 1em;  /* 부모(.schedule-item-box) 폰트 크기 대비 0.9em (상대적으로 키움) */
         display: block;    /* 블록 요소로 만들어 공간 확보 */
         margin-top: 2px;   /* 위 텍스트와의 간격 */
         font-weight: normal; /* 일반 굵기 */
@@ -733,11 +733,11 @@ footer {
         margin-bottom: 15px;
     }
     .calendar-navigation a {
-        font-size: 1.5em !important;  /* 명확한 적용을 위해 !important 사용 (최후의 수단) */
+        font-size: 2em !important;  /* 명확한 적용을 위해 !important 사용 (최후의 수단) */
         padding: 4px 6px !important;   
     }
     .calendar-navigation span { 
-        font-size: 1.6em !important;   /* 명확한 적용을 위해 !important 사용 (최후의 수단) */
+        font-size: 2em !important;   /* 명확한 적용을 위해 !important 사용 (최후의 수단) */
         margin: 0 6px !important;       
     }
 
@@ -746,7 +746,7 @@ footer {
         padding: 10px 15px; /* 네비게이션 바 내부 패딩 약간 조정 (선택 사항) */
     }
     .navbar-brand a {
-        font-size: 1.2em; /* "아이 돌봄 서비스" 텍스트 크기 (기존 1.3em에서 약간 줄임) */
+        font-size: 1.3em; 
     }
     .navbar-links {
         margin-top: 0;      /* 세로 정렬 시 사용했던 상단 마진 제거 */
@@ -754,7 +754,7 @@ footer {
         text-align: right;  /* 내부 아이템들(링크, 사용자 이름)을 오른쪽으로 정렬 */
     }
     .navbar-links a, .navbar-links .username-display {
-        font-size: 0.8em;   /* 링크 및 사용자 이름 폰트 크기 (기존 0.85em에서 약간 줄임) */
+        font-size: 1em;   /* 링크 및 사용자 이름 폰트 크기 (기존 0.85em에서 약간 줄임) */
         padding: 5px 7px;   /* 내부 패딩 약간 줄임 */
         margin-left: 8px;   /* 왼쪽 마진 약간 줄임 */
     }
@@ -767,13 +767,13 @@ footer {
 
     .button-primary,
     .button-secondary {
-        font-size: 0.85em; /* 버튼 폰트 크기 줄임 */
+        font-size: 1em; /* 버튼 폰트 크기 줄임 */
         padding: 7px 12px; /* 버튼 내부 패딩 줄임 */
     }
 
     .admin-dashboard-container button.button-primary,   /* 관리자 대시보드 내부의 버튼을 특정 */
     .admin-dashboard-container button.button-secondary {
-        font-size: 0.85em;
+        font-size: 1em;
         padding: 7px 12px !important; /* 인라인 스타일을 덮어쓰기 위해 !important 사용 */
         /* width: auto !important; */ /* 인라인 width:auto 보다 우선 적용 (필요시) */
     }
