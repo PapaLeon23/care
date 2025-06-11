@@ -202,9 +202,10 @@ def get_calendar_data(year, month, user_id_for_view=None, for_admin=False):
                 })
             # =========================================================
 
-        # 주말만 있던 빈 주(week)는 추가하지 않도록 함 (예: 월초, 월말)
-        if week_data_for_template_inner:
+        # ======== 이 부분을 수정합니다 ========
+        if any(day['day'] != 0 for day in week_data_for_template_inner):
             weeks_data_for_template.append(week_data_for_template_inner)
+        # =================================
             
     # ======== 요일 헤더를 월요일부터 금요일까지만 반환 ========
     weekday_headers = ["월", "화", "수", "목", "금"] 
