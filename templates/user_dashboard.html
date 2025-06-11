@@ -170,7 +170,7 @@
 {# 이 페이지의 메인 컨테이너에 .content-box를 적용하지 않고, 내부 pane들에 적용 #}
 <div class="user-dashboard"> 
     <div class="left-pane content-box"> {# 달력 영역 박스 #}
-        <h2 class="page-main-title">{{ month_title_display }} 근무 달력</h2> {# 제목 스타일 적용 #}
+        <h2 class="page-main-title">{{ month_title_display }} 돌봄 달력</h2> {# 제목 스타일 적용 #}
         <div class="calendar-navigation">
             <a href="{{ url_for('user_dashboard', year=current_year_for_nav if current_month_for_nav > 1 else current_year_for_nav-1, month=current_month_for_nav-1 if current_month_for_nav > 1 else 12) }}">&lt; 이전 달</a>
             <span>{{ selected_year_for_summary }}년 {{ selected_month_for_summary }}월</span>
