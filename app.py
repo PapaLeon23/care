@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 import calendar as py_calendar # Python 기본 calendar 모듈
 from flask_sqlalchemy import SQLAlchemy
 import hashlib
@@ -24,6 +24,8 @@ AFTERNOON_SHIFT_DESC = f"하원 (16:30 ~ 18:30, {AFTERNOON_HOURS}시간)"
 OVERTIME_SHIFT_DESC_BASE = f"하원 + 연장 (16:30 ~ 19:00, {AFTERNOON_HOURS + OVERTIME_ADDITIONAL_MINUTES/60:.1f}시간)"
 WORK_TYPE_HOLIDAY = "휴일"
 
+# ======== 2. 한국 시간대(KST) 상수 정의 ========
+KST = timezone(timedelta(hours=9))
 
 # --- 데이터베이스 모델 --- (기존과 동일)
 class User(db.Model):
@@ -115,10 +117,12 @@ def get_monthly_work_summary(user_id, year, month):
 def get_calendar_data(year, month, user_id_for_view=None, for_admin=False):
     py_calendar.setfirstweekday(py_calendar.MONDAY) 
     cal = py_calendar.Calendar()
-    # 7일 기준의 주별 달력 데이터를 가져옵니다.
     month_calendar_weeks_raw = cal.monthdays2calendar(year, month) 
 
     weeks_data_for_template = []
+    
+    # "오늘" 날짜를 한국 시간 기준으로 명확하게 설정
+    today_kst = datetime.now(KST).date()
 
     # 스케줄 데이터 미리 로드 로직 (기존과 동일)
     first_day_of_month = date(year, month, 1)
@@ -146,71 +150,44 @@ def get_calendar_data(year, month, user_id_for_view=None, for_admin=False):
             schedules_by_date[s_date] = []
         schedules_by_date[s_date].append(s_obj)
 
-    # 달력 주차별 루프
     for week_raw in month_calendar_weeks_raw:
         week_data_for_template_inner = []
-        # week_raw는 7일치 데이터를 포함 (월=0, 화=1, ..., 금=4, 토=5, 일=6)
         for day_num, weekday_val_py_std in week_raw:
             
-            # ======== 월요일부터 금요일까지만 처리하도록 조건 추가 ========
-            if weekday_val_py_std <= 4: # 월(0) ~ 금(4)
+            if weekday_val_py_std <= 4:
                 schedules_details_for_day = []
                 current_date_obj = None
                 is_today_flag = False
                 date_str_for_template = ''
-                is_weekend_day = False # 이제 주말은 표시하지 않으므로 항상 False
+                is_weekend_day = False
 
                 if day_num != 0:
                     current_date_obj = date(year, month, day_num)
                     date_str_for_template = current_date_obj.strftime('%Y-%m-%d')
-                    is_today_flag = (current_date_obj == date.today())
+                    
+                    # '오늘' 여부 비교 시 한국 시간 기준 날짜 사용
+                    is_today_flag = (current_date_obj == today_kst)
                     
                     day_schedules_from_db_objects = schedules_by_date.get(current_date_obj, [])
-
+                    # ... (이하 스케줄 상세 정보 만드는 로직은 기존과 동일) ...
                     for schedule_obj in day_schedules_from_db_objects:
                         if for_admin or (user_id_for_view is not None and schedule_obj.user_id == user_id_for_view):
                             worker_info = user_map.get(schedule_obj.user_id, {'username': "Unknown", 'nickname': "Unknown User"})
-                            
                             display_nickname_for_cal = worker_info['nickname']
                             work_type_for_cal_display = schedule_obj.work_type
-
                             if schedule_obj.work_type == WORK_TYPE_HOLIDAY:
                                 display_nickname_for_cal = ""
                                 work_type_for_cal_display = WORK_TYPE_HOLIDAY
                             elif schedule_obj.work_type == '하원' and schedule_obj.is_overtime:
                                 work_type_for_cal_display = "연장"
-                            
-                            schedules_details_for_day.append({
-                                'id': schedule_obj.id, 
-                                'user_id': schedule_obj.user_id,
-                                'username': worker_info['username'], 
-                                'nickname': display_nickname_for_cal,
-                                'work_type': schedule_obj.work_type,
-                                'work_type_display': work_type_for_cal_display,
-                                'is_overtime': schedule_obj.is_overtime,
-                                'date_str': date_str_for_template, 
-                                'status': schedule_obj.status
-                            })
+                            schedules_details_for_day.append({ 'id': schedule_obj.id, 'user_id': schedule_obj.user_id, 'username': worker_info['username'], 'nickname': display_nickname_for_cal, 'work_type': schedule_obj.work_type, 'work_type_display': work_type_for_cal_display, 'is_overtime': schedule_obj.is_overtime, 'date_str': date_str_for_template, 'status': schedule_obj.status })
                 
-                week_data_for_template_inner.append({
-                    'day': day_num,
-                    'schedules_details': schedules_details_for_day,
-                    'is_today': is_today_flag,
-                    'date_str': date_str_for_template,
-                    'is_weekend': is_weekend_day,
-                    'py_weekday': weekday_val_py_std
-                })
-            # =========================================================
+                week_data_for_template_inner.append({ 'day': day_num, 'schedules_details': schedules_details_for_day, 'is_today': is_today_flag, 'date_str': date_str_for_template, 'is_weekend': is_weekend_day, 'py_weekday': weekday_val_py_std })
 
-        # ======== 이 부분을 수정합니다 ========
         if any(day['day'] != 0 for day in week_data_for_template_inner):
             weeks_data_for_template.append(week_data_for_template_inner)
-        # =================================
             
-    # ======== 요일 헤더를 월요일부터 금요일까지만 반환 ========
     weekday_headers = ["월", "화", "수", "목", "금"] 
-    # =====================================================
-    
     return weeks_data_for_template, weekday_headers, f"{year}년 {month}월"
 
 # --- 컨텍스트 프로세서 ---
@@ -526,23 +503,45 @@ def admin_delete_schedule(schedule_id):
 def admin_complete_past_planned_schedules():
     if 'user_id' not in session or not session.get('is_admin'):
         flash('관리자 권한이 필요합니다.', 'danger'); return redirect(url_for('login'))
-    today = date.today()
+    
     try:
-        # "계획됨" 상태이고, "휴일" 유형이 아닌 지난 스케줄만 업데이트
+        # 현재 시간을 한국 시간(KST) 기준으로 가져옵니다.
+        now_kst = datetime.now(KST)
+        today_kst = now_kst.date()
+
+        # 저녁 8시 (20시)를 기준으로 완료 처리할 날짜 범위를 결정합니다.
+        if now_kst.hour < 20:
+            # 저녁 8시 이전: 어제 날짜까지의 근무를 완료 처리
+            # 즉, 오늘 날짜보다 '작은' 날짜들이 대상
+            cutoff_date = today_kst
+            filter_condition = WorkSchedule.work_date < cutoff_date
+            message_period = "어제"
+        else:
+            # 저녁 8시 이후: 오늘 날짜까지의 근무를 완료 처리
+            # 즉, 오늘 날짜보다 '작거나 같은' 날짜들이 대상
+            cutoff_date = today_kst
+            filter_condition = WorkSchedule.work_date <= cutoff_date
+            message_period = "오늘"
+            
+        # "계획됨" 상태이고, "휴일" 유형이 아닌 스케줄만 업데이트
         updated_count = WorkSchedule.query.filter(
-            WorkSchedule.work_date < today,
+            filter_condition,
             WorkSchedule.status == '계획됨',
-            WorkSchedule.work_type != WORK_TYPE_HOLIDAY # 휴일 유형 제외
+            WorkSchedule.work_type != WORK_TYPE_HOLIDAY
         ).update({'status': '근무 완료'}, synchronize_session=False)
         
         db.session.commit()
+        
         if updated_count > 0:
-            flash(f"{updated_count}개의 지난 '계획됨' 스케줄이 '근무 완료'로 처리되었습니다.", "success")
+            flash(f"{message_period}까지의 '계획됨' 스케줄 {updated_count}개가 '근무 완료'로 처리되었습니다.", "success")
         else:
             flash("업데이트할 지난 '계획됨' 스케줄이 없습니다.", "info")
+
     except Exception as e:
         db.session.rollback()
         flash(f"지난 근무 업데이트 중 오류 발생: {e}", "danger")
+        
+    # 현재 보고 있던 페이지로 돌아갑니다.
     return redirect(request.referrer or url_for('admin_dashboard'))
 
 
